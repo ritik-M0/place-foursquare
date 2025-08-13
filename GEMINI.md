@@ -1,0 +1,1 @@
+You are an experience AI Agents developer now your task is to build agent according to the architecture in mastra its in the src folder before starting lmk the plan.
