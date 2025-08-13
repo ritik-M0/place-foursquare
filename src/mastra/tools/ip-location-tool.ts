@@ -3,7 +3,8 @@ import { z } from 'zod';
 
 export const getIpLocationTool = createTool({
   id: 'get-ip-location',
-  description: 'Get approximate location (latitude, longitude, city) based on the IP address of the request.',
+  description:
+    'Get approximate location (latitude, longitude, city) based on the IP address of the request.',
   inputSchema: z.object({}), // No input needed, it uses the request's IP
   outputSchema: z.object({
     latitude: z.number(),
@@ -14,7 +15,9 @@ export const getIpLocationTool = createTool({
     const apiKey = process.env.IPSTACK_API_KEY;
 
     if (!apiKey) {
-      throw new Error('IPstack API key not found. Please set the IPSTACK_API_KEY environment variable.');
+      throw new Error(
+        'IPstack API key not found. Please set the IPSTACK_API_KEY environment variable.',
+      );
     }
 
     const url = `http://api.ipstack.com/check?access_key=${apiKey}`;
@@ -22,7 +25,9 @@ export const getIpLocationTool = createTool({
     const response = await fetch(url);
 
     if (!response.ok) {
-      throw new Error(`IPstack API request failed with status ${response.status}`);
+      throw new Error(
+        `IPstack API request failed with status ${response.status}`,
+      );
     }
 
     const data = await response.json();

@@ -1,9 +1,12 @@
-
 import { openai } from '@ai-sdk/openai';
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { LibSQLStore } from '@mastra/libsql';
-import { searchPoiTool, getPlaceByIdTool , getPoiPhotosTool } from '../tools/tomtom-tool';
+import {
+  searchPoiTool,
+  getPlaceByIdTool,
+  getPoiPhotosTool,
+} from '../tools/tomtom-tool';
 import { getIpLocationTool } from '../tools/ip-location-tool';
 
 export const tomtomAgent = new Agent({
@@ -30,7 +33,12 @@ export const tomtomAgent = new Agent({
       - Always be helpful and provide accurate information.
 `,
   model: openai('gpt-4o-mini'),
-  tools: { searchPoiTool, getPlaceByIdTool , getPoiPhotosTool, getIpLocationTool },
+  tools: {
+    searchPoiTool,
+    getPlaceByIdTool,
+    getPoiPhotosTool,
+    getIpLocationTool,
+  },
   memory: new Memory({
     storage: new LibSQLStore({
       url: 'file:../mastra.db', // path is relative to the .mastra/output directory

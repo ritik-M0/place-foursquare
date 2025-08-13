@@ -1,16 +1,14 @@
-
 import { Mastra } from '@mastra/core/mastra';
 import { PinoLogger } from '@mastra/loggers';
 import { LibSQLStore } from '@mastra/libsql';
 
-
 import { tomtomAgent } from './agents/tomtom-agent';
 
-export const mastra = new Mastra({
+export const mastra: Mastra = new Mastra({
   agents: { tomtomAgent },
   storage: new LibSQLStore({
     // stores telemetry, evals, ... into memory storage, if it needs to persist, change to file:../mastra.db
-    url: ":memory:",
+    url: ':memory:',
   }),
   logger: new PinoLogger({
     name: 'Mastra',
