@@ -156,3 +156,6 @@ This location intelligence platform leverages AI agents to process natural langu
 - Composite indexes on location + category
 - Time-based partitioning for enrichment data
 - Spatial Geointelligence on dashboard
+
+
+OPENROUTER_API_KEY (infra)="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" OPENAI_API_KEY(infra)="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"
