@@ -20,6 +20,11 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^1.0.0",
+    "@mastra/core": "^0.13.2",
+    "@mastra/libsql": "^0.13.2",
+    "@mastra/loggers": "^0.10.6",
+    "@mastra/memory": "^0.12.2",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",

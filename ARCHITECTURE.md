@@ -155,3 +155,4 @@ This location intelligence platform leverages AI agents to process natural langu
 - GiST indexes for fast location queries
 - Composite indexes on location + category
 - Time-based partitioning for enrichment data
+- Spatial Geointelligence on dashboard
