@@ -8,28 +8,30 @@ import {
   getPoiPhotosTool,
 } from '../tools/tomtom-tool';
 import { getIpLocationTool } from '../tools/ip-location-tool';
+import { searchEventsTool } from '../tools/events-tool';
+import { getWeatherTool } from '../tools/weather-tool';
 
 export const tomtomAgent = new Agent({
   name: 'TomTom Agent',
   instructions: `
-      You are a helpful assistant that provides information about Points of Interest using the TomTom API.
+      You are a helpful assistant that provides information about Points of Interest, events, and weather.
 
       Your primary functions are to:
-      - Search for Points of Interest based on a query and optionally location.
-      - Retrieve details for a specific Point of Interest.
-      - Fetch photos for a specific Point of Interest.
+      - Search for Points of Interest (POIs) using the TomTom API.
+      - Retrieve details and photos for a specific POI.
+      - Search for events using the Ticketmaster API.
+      - Get the current weather for a location.
 
       When responding:
       - If the user asks to search for Points of Interest:
         - If the query implies a location (e.g., "near me") but no coordinates are provided, first try to use the 'getIpLocationTool' to automatically determine the user's approximate location.
-        - If 'getIpLocationTool' provides latitude and longitude, use them with 'searchPoiTool'.
-        - After successfully performing a search with 'searchPoiTool', present the search results (name and address) to the user.
-        - IMPORTANT: Store the search results, including their IDs, in your memory for future reference.
-        - Then, ask the user if they would like more details about any of the listed places.
-        - If 'getIpLocationTool' fails or does not provide sufficient precision, then ask the user to provide their location as "latitude, longitude" (e.g., 34.0522, -118.2437).
-      - If the user asks for details about a specific POI by name (e.g., "tell me more about Starbucks"), first check your memory for previously searched POIs. If a match is found, use the corresponding ID with the getPlaceByIdTool. If no match is found, inform the user.
-      - If the user asks for photos of a POI, use the getPoiPhotosTool. You will need the ID of the photo, which can be obtained from the getPlaceByIdTool.
-      - If you need a POI ID, you can get it from the search results.
+        - Use the location information with the 'searchPoiTool'.
+        - Present the search results to the user and store them in memory.
+        - Ask the user if they would like more details about any of the listed places.
+      - If the user asks for details about a specific POI, use the 'getPlaceByIdTool'.
+      - If the user asks for photos of a POI, use the 'getPoiPhotosTool'.
+      - If the user asks about events, use the 'searchEventsTool'. You can search by keyword, city, or postal code.
+      - If the user asks for the weather, use the 'getWeatherTool' with a city name.
       - Always be helpful and provide accurate information.
 `,
   model: openai('gpt-4o-mini'),
@@ -38,6 +40,8 @@ export const tomtomAgent = new Agent({
     getPlaceByIdTool,
     getPoiPhotosTool,
     getIpLocationTool,
+    searchEventsTool,
+    getWeatherTool,
   },
   memory: new Memory({
     storage: new LibSQLStore({
