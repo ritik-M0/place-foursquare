@@ -1,89 +1,95 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 
-const baseURL = 'https://app.ticketmaster.com/discovery/v2/events.json';
+const baseURL = 'https://api.predicthq.com/v1/events/';
 
 export const searchEventsTool = createTool({
   id: 'search-events',
-  description: 'Search for events using the Ticketmaster API',
+  description: 'Search for events using the PredictHQ API.',
   inputSchema: z.object({
-    keyword: z.string().optional().describe('Keyword to search for (e.g., "concert", "music festival")'),
-    city: z.string().optional().describe('City to search for events in'),
-    postalCode: z.string().optional().describe('Postal code to search for events in'),
-    size: z.number().optional().default(5).describe('Number of events to return'),
+    q: z.string().optional().describe('Keyword to search for (e.g., "concert", "festival")'),
+    limit: z.number().optional().default(10).describe('Number of events to return'),
+    country: z.string().optional().describe('Filter by 2-letter country code (e.g., "US", "GB")'),
+    within: z.string().optional().describe('Filter by a radius around a latitude/longitude (e.g., "10km@-33.8688,151.2093")'),
+    category: z.string().optional().describe('Filter by category (e.g., "concerts", "sports")'),
+    'start.gte': z.string().optional().describe('Events that start on or after this date (YYYY-MM-DD)'),
+    'start.lte': z.string().optional().describe('Events that start on or before this date (YYYY-MM-DD)'),
+    sort: z.string().optional().describe('Sort order (e.g., "start", "-start", "rank")'),
   }),
   outputSchema: z.object({
-    events: z.array(
+    count: z.number(),
+    results: z.array(
       z.object({
-        name: z.string(),
-        url: z.string().url(),
-        dates: z.object({
-          start: z.object({
-            localDate: z.string(),
-            localTime: z.string().optional(),
-          }),
+        id: z.string(),
+        title: z.string(),
+        description: z.string().nullable(),
+        category: z.string(),
+        start: z.string(),
+        end: z.string().nullable(),
+        timezone: z.string().nullable(),
+        country: z.string(),
+        location: z.object({
+            type: z.string(),
+            coordinates: z.array(z.number()),
         }),
-        venues: z.array(
-            z.object({
-                name: z.string(),
-                city: z.object({
-                    name: z.string(),
-                }),
-                address: z.object({
-                    line1: z.string(),
-                }),
-            })
-        ).optional(),
+        address: z.object({
+            formatted_address: z.string().nullable(),
+            locality: z.string().nullable(),
+            region: z.string().nullable(),
+            postcode: z.string().nullable(),
+        }).optional(),
       }),
     ),
   }),
   execute: async ({ context }) => {
-    const { keyword, city, postalCode, size } = context;
-    const apiKey = process.env.TICKETMASTER_API_KEY;
+    const { q, limit, country, within, category, 'start.gte': startGte, 'start.lte': startLte, sort } = context;
+    const apiKey = process.env.PREDICTHQ_API_KEY;
 
     if (!apiKey) {
-      throw new Error('Ticketmaster API key not found. Please set the TICKETMASTER_API_KEY environment variable.');
+      throw new Error('PredictHQ API key not found. Please set the PREDICTHQ_API_KEY environment variable.');
     }
 
     const url = new URL(baseURL);
-    url.searchParams.append('apikey', apiKey);
-    url.searchParams.append('size', size.toString());
+    if (q) url.searchParams.append('q', q);
+    if (limit) url.searchParams.append('limit', limit.toString());
+    if (country) url.searchParams.append('country', country);
+    if (within) url.searchParams.append('within', within);
+    if (category) url.searchParams.append('category', category);
+    if (startGte) url.searchParams.append('start.gte', startGte);
+    if (startLte) url.searchParams.append('start.lte', startLte);
+    if (sort) url.searchParams.append('sort', sort);
 
-    if (keyword) url.searchParams.append('keyword', keyword);
-    if (city) url.searchParams.append('city', city);
-    if (postalCode) url.searchParams.append('postalCode', postalCode);
 
-    const response = await fetch(url.toString());
+    const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Accept": "application/json"
+        },
+    });
 
     if (!response.ok) {
-      throw new Error(`Ticketmaster API request failed with status ${response.status}`);
+      throw new Error(`PredictHQ API request failed with status ${response.status}`);
     }
 
     const data = await response.json();
 
-    if (data._embedded && data._embedded.events) {
-        const events = data._embedded.events.map((event: any) => ({
-            name: event.name,
-            url: event.url,
-            dates: {
-                start: {
-                    localDate: event.dates.start.localDate,
-                    localTime: event.dates.start.localTime,
-                },
-            },
-            venues: event._embedded?.venues?.map((venue: any) => ({
-                name: venue.name,
-                city: {
-                    name: venue.city.name,
-                },
-                address: {
-                    line1: venue.address.line1,
-                },
-            })),
-        }));
-        return { events };
-    }
+    const results = data.results.map((event: any) => ({
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        category: event.category,
+        start: event.start,
+        end: event.end,
+        timezone: event.timezone,
+        country: event.country,
+        location: event.geo.geometry,
+        address: event.geo.address,
+    }));
 
-    return { events: [] };
+    return {
+        count: data.count,
+        results,
+    };
   },
 });
