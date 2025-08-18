@@ -30,6 +30,35 @@ export class PlacesService {
     }
   }
 
+  async *chatWithAgentStream(
+    message: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    sessionId?: string,
+  ): AsyncGenerator<string, void, unknown> {
+    try {
+      this.logger.log(
+        `Processing streaming chat message: ${message.substring(0, 100)}...`,
+      );
+
+      const agent = mastra.getAgent('tomtomAgent');
+      if (!agent) {
+        throw new Error('TomTom agent not found');
+      }
+
+      const streamResult = await agent.stream(message);
+
+      // Handle the stream result properly using textStream
+      for await (const chunk of streamResult.textStream) {
+        yield chunk;
+      }
+
+      this.logger.log('Streaming chat message processed successfully');
+    } catch (error) {
+      this.logger.error('Error in streaming chat service:', error);
+      throw error;
+    }
+  }
+
   async searchPlaces(
     query: string,
     lat?: string,
