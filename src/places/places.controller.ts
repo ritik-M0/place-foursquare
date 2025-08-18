@@ -8,6 +8,8 @@ import {
   HttpStatus,
   ValidationPipe,
   UsePipes,
+  Res,
+  Headers,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,6 +18,7 @@ import {
   ApiBody,
   ApiQuery,
 } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { PlacesService } from './places.service';
 import {
   ChatDto,
@@ -71,6 +74,106 @@ export class PlacesController {
         error instanceof Error ? error.message : 'Internal server error',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+  }
+
+  @Post('chat/stream')
+  @ApiOperation({
+    summary: 'Chat with TomTom Agent (Streaming)',
+    description:
+      'Send a natural language message to the TomTom agent with streaming response using Server-Sent Events',
+  })
+  @ApiBody({ type: ChatDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully started streaming chat response',
+    content: {
+      'text/plain': {
+        schema: {
+          type: 'string',
+          description: 'Server-Sent Events stream',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Invalid input',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+  })
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  async chatWithAgentStream(
+    @Body() chatDto: ChatDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    try {
+      const { message, sessionId } = chatDto;
+
+      // Set SSE headers
+      res.writeHead(200, {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Cache-Control',
+      });
+
+      // Send initial metadata
+      res.write(
+        `data: ${JSON.stringify({
+          type: 'start',
+          timestamp: new Date().toISOString(),
+          sessionId,
+        })}\n\n`,
+      );
+
+      try {
+        // Stream the response
+        for await (const chunk of this.placesService.chatWithAgentStream(
+          message,
+          sessionId,
+        )) {
+          res.write(
+            `data: ${JSON.stringify({
+              type: 'content',
+              content: chunk,
+              timestamp: new Date().toISOString(),
+            })}\n\n`,
+          );
+        }
+
+        // Send completion signal
+        res.write(
+          `data: ${JSON.stringify({
+            type: 'done',
+            timestamp: new Date().toISOString(),
+          })}\n\n`,
+        );
+      } catch (streamError) {
+        // Send error in stream
+        res.write(
+          `data: ${JSON.stringify({
+            type: 'error',
+            error:
+              streamError instanceof Error
+                ? streamError.message
+                : 'Stream error',
+            timestamp: new Date().toISOString(),
+          })}\n\n`,
+        );
+      }
+
+      res.end();
+    } catch (error) {
+      if (!res.headersSent) {
+        throw new HttpException(
+          error instanceof Error ? error.message : 'Internal server error',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
     }
   }
 
