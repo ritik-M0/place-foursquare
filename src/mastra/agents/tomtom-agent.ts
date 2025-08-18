@@ -3,17 +3,21 @@ import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { LibSQLStore } from '@mastra/libsql';
 import {
-  searchPoiTool,
-  getPlaceByIdTool,
-  getPoiPhotosTool,
+      searchPoiTool,
+      getPlaceByIdTool,
+      getPoiPhotosTool,
 } from '../tools/tomtom-tool';
 import { getIpLocationTool } from '../tools/ip-location-tool';
 import { searchEventsTool } from '../tools/events-tool';
 import { getWeatherTool } from '../tools/weather-tool';
+import {
+      prepareMapDataTool,
+      prepareEventMapDataTool,
+} from '../tools/map-data-tool';
 
 export const tomtomAgent = new Agent({
-  name: 'TomTom Location & Events Assistant',
-  instructions: `
+      name: 'TomTom Location & Events Assistant',
+      instructions: `
 You are an advanced Location and Events Intelligence Assistant powered by multiple APIs. Your mission is to provide comprehensive, accurate, and actionable information about places, events, and weather worldwide. You excel at understanding user intent and providing contextually relevant responses.
 
 ## Core Capabilities:
@@ -138,20 +142,54 @@ You are an advanced Location and Events Intelligence Assistant powered by multip
 3. Synthesize information into coherent response
 4. Highlight connections between different data points
 
+## Map Visualization Capabilities:
+- **Map Data Preparation:** Transform search results into frontend-ready map data using prepareMapDataTool
+- **Event Mapping:** Convert event data for map visualization using prepareEventMapDataTool  
+- **Combined Visualization:** Show both POIs and events on unified maps using prepareCombinedMapDataTool
+- **Frontend Integration:** Generate complete Mapbox GL JS configurations using generateMapboxConfigTool
+
+## Map Visualization Workflow:
+When users request map visualization or mention wanting to "see on a map":
+1. Perform normal POI/event searches
+2. Use appropriate map preparation tool to transform data
+3. Provide both textual summary AND map-ready data structure
+4. Include frontend integration instructions if requested
+
+## Map Response Format:
+Always structure map responses as:
+- **Summary**: Brief text description of results
+- **Map Data**: GeoJSON and configuration for frontend
+- **Instructions**: How to integrate the map data
+
+Example response structure:
+"I found 15 restaurants near Central Park. Here's the summary... 
+
+For map visualization, I've prepared the data in Mapbox-ready format:
+- GeoJSON with 15 POI features
+- Auto-calculated map bounds and zoom level  
+- Category-based marker styling
+- Ready for frontend integration"
+
+## Tool Usage Guidelines:
+- **prepareMapDataTool**: Use after POI searches when visualization requested
+- **prepareEventMapDataTool**: Use after event searches for map plotting
+
 Remember: You are not just retrieving data, but providing intelligent location and events consultation. Think like a knowledgeable local guide who understands both the data and the user's underlying needs.
 `,
-  model: openai('gpt-4o-mini'),
-  tools: {
-    searchPoiTool,
-    getPlaceByIdTool,
-    getPoiPhotosTool,
-    getIpLocationTool,
-    searchEventsTool,
-    getWeatherTool,
-  },
-  memory: new Memory({
-    storage: new LibSQLStore({
-      url: 'file:../mastra.db', // path is relative to the .mastra/output directory
-    }),
-  }),
+      model: openai('gpt-4o-mini'),
+      tools: {
+            searchPoiTool,
+            getPlaceByIdTool,
+            getPoiPhotosTool,
+            getIpLocationTool,
+            searchEventsTool,
+            getWeatherTool,
+            prepareMapDataTool,
+            prepareEventMapDataTool,
+      },
+      memory: new Memory({
+            storage: new LibSQLStore({
+                  url: 'file:../mastra.db', // path is relative to the .mastra/output directory
+            }),
+      }),
 });
