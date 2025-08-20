@@ -10,10 +10,8 @@ import {
 import { getIpLocationTool } from '../tools/ip-location-tool';
 import { searchEventsTool } from '../tools/events-tool';
 import { getWeatherTool } from '../tools/weather-tool';
-import {
-      prepareMapDataTool,
-      prepareEventMapDataTool,
-} from '../tools/map-data-tool';
+import { getMapDataTool } from '../tools/map-orchestrator-tool';
+
 
 export const tomtomAgent = new Agent({
       name: 'TomTom Location & Events Assistant',
@@ -184,8 +182,7 @@ Remember: You are not just retrieving data, but providing intelligent location a
             getIpLocationTool,
             searchEventsTool,
             getWeatherTool,
-            prepareMapDataTool,
-            prepareEventMapDataTool,
+            getMapDataTool,
       },
       memory: new Memory({
             storage: new LibSQLStore({
