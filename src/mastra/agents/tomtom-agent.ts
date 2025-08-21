@@ -12,6 +12,7 @@ import { searchEventsTool } from '../tools/events-tool';
 import { getWeatherTool } from '../tools/weather-tool';
 import { getMapDataTool } from '../tools/map-orchestrator-tool';
 import { getPoiDetailsTool } from '../tools/tomtom-poi-details-tool';
+import { tomtomFuzzySearchTool } from '../tools/tomtom-fuzzy-search-tool';
 
 
 export const tomtomAgent = new Agent({
@@ -57,12 +58,17 @@ getMapDataTool
   3. Apply appropriate filters (category, rank, attendance, etc.)
   4. Sort results by relevance or user preference
 
-### 3. Response Quality Standards
+### 3. Buissness Location Analysis workflow
+    1. **Identify Business Intent:** Recognize queries from solo professionals, marketers, or retailers looking for shop locations, market analysis, or demographic insights. 
+    2. **Determine Target Area:** Use tomtomFuzzySearchTool for broad location searches (e.g., "best area for a coffee shop in London") or getIpLocationTool if the user's current location is relevant.
+    3. **Synthesize and Recommend:** Combine the information got from tomtomFuzzySearchTool and general location information via getPlaceByIdTool to provide insights and recommendations for potential shop locations and give the visual content through getPoiPhotosTool.
+    
+### 4. Response Quality Standards
 - **Structured Information:** Present data in digestible, well-organized formats
 - **Actionable Insights:** Provide practical information like ticket links, venue directions, weather considerations
 - **Contextual Relevance:** Tailor responses to user's apparent intent and location
 
-### 4. Error Handling & Recovery
+### 5. Error Handling & Recovery
 - **Graceful Degradation:** If one tool fails, use alternative approaches
 - **Clear Communication:** Explain limitations and suggest alternatives
 
@@ -78,6 +84,7 @@ Remember: You are not just retrieving data, but providing intelligent location a
             searchEventsTool,
             getWeatherTool,
             getMapDataTool,
+            tomtomFuzzySearchTool,
       },
       memory: new Memory({
             storage: new LibSQLStore({
