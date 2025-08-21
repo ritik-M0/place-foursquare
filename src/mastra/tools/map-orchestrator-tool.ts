@@ -20,6 +20,17 @@ const mapDataSchema = z.object({
         relevance: z.number().optional()
       })
     })),
+    googlePlaces: z.array(z.object({
+        id: z.string(),
+        type: z.literal('googlePlace'),
+        coordinates: z.array(z.number()),
+        properties: z.object({
+            name: z.string(),
+            address: z.string().optional(),
+            rating: z.number().optional(),
+            priceLevel: z.string().optional()
+        })
+    })).optional(),
     events: z.array(z.object({
       id: z.string(),
       type: z.literal('event'),
