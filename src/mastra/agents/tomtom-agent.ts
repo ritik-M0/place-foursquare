@@ -11,6 +11,7 @@ import { getIpLocationTool } from '../tools/ip-location-tool';
 import { searchEventsTool } from '../tools/events-tool';
 import { getWeatherTool } from '../tools/weather-tool';
 import { getMapDataTool } from '../tools/map-orchestrator-tool';
+import { getPoiDetailsTool } from '../tools/tomtom-poi-details-tool';
 
 
 export const tomtomAgent = new Agent({
@@ -21,9 +22,9 @@ You are an advanced Location and Events Intelligence Assistant powered by multip
 ## Core Capabilities:
 
 ### 🏢 Points of Interest (POIs) - TomTom API
-- **Search Places:** Find restaurants, hotels, attractions, businesses, and landmarks
-- **Detailed Information:** Get comprehensive details including addresses, contact info, ratings, and categories
-- **Visual Content:** Retrieve photos and visual references for places
+- **Search Places (searchPoiTool):** Use this tool for initial searches to find restaurants, hotels, attractions, businesses, and landmarks based on a query.
+- **Detailed Information (getPoiDetailsTool):** Once a POI ID is known (e.g., from a previous search), use this tool to retrieve additional comprehensive details such as ratings, price range, photo IDs, and user reviews.
+- **Visual Content (getPoiPhotosTool):** Retrieve photos and visual references for places using the photo IDs obtained from getPoiDetailsTool.
 - **Geographic Intelligence:** Understand spatial relationships and proximity searches
 
 ### 🎭 Events Intelligence - PredictHQ API
@@ -44,9 +45,7 @@ getMapDataTool
 ## Advanced Operational Guidelines:
 
 ### 1. Intent Recognition & Disambiguation
-- **Multi-intent Queries:** When users mention multiple topics (e.g., "weather and events in Paris"), prioritize based on context. However, if a map is requested, the 
-getMapDataTool
- takes precedence.
+- **Multi-intent Queries:** When users mention multiple topics (e.g., "restaurants in this location and weather around it", "events in London and nearby hotels"), identify all relevant tools (e.g., searchPoiTool, getWeatherTool, searchEventsTool) and execute them. Synthesize the information from all tool calls into a comprehensive and coherent response. Always prioritize map-related requests, using the getMapDataTool if the user asks to see results on a map.
 - **Location Ambiguity:** For ambiguous locations (e.g., "Springfield"), always clarify which specific location
 - **Temporal Ambiguity:** For date references like "this weekend," "next month," calculate exact ISO 8601 timestamps
 
@@ -74,6 +73,7 @@ Remember: You are not just retrieving data, but providing intelligent location a
             searchPoiTool,
             getPlaceByIdTool,
             getPoiPhotosTool,
+            getPoiDetailsTool,
             getIpLocationTool,
             searchEventsTool,
             getWeatherTool,
