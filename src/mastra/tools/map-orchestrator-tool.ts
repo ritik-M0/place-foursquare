@@ -77,6 +77,19 @@ export const getMapDataTool = createTool({
 
     const response = await mapOrchestratorAgent.generate(query);
 
-    return JSON.parse(response.text);
+    if (!response.text || !response.text.trim().startsWith('{')) {
+      throw new Error(
+        'Map Orchestrator Agent returned an empty or invalid response. Could not generate map data.',
+      );
+    }
+
+    try {
+      return JSON.parse(response.text);
+    } catch (e) {
+      throw new Error(
+        'Map Orchestrator Agent failed to generate valid GeoJSON. The response was: ' +
+          response.text,
+      );
+    }
   },
 });

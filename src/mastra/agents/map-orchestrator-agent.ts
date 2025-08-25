@@ -5,7 +5,7 @@ import { tomtomFuzzySearchTool } from '../tools/tomtom-fuzzy-search-tool';
 import { searchEventsTool } from '../tools/events-tool';
 import { getWeatherTool } from '../tools/weather-tool';
 import { getIpLocationTool } from '../tools/ip-location-tool';
-import { getFootTrafficTool } from '../tools/foot-traffic-tool';
+import { getFootTrafficSummaryTool } from '../tools/foot-traffic-summary-tool';
 
 export const mapOrchestratorAgent = new Agent({
   name: 'Map Orchestrator Agent',
@@ -23,7 +23,7 @@ export const mapOrchestratorAgent = new Agent({
 
     3.  **Execute the Plan:**
         - **Step A: Find Candidate Places:** Use the tomtomFuzzySearchTool to find all relevant places based on the business type and location (e.g., search for \"fast-food\" in \"Austin\"). Be sure to set a reasonable limit.
-        - **Step B: Analyze Constraints:** For the candidates you found, use other tools to check the constraints. For foot traffic analysis, use the getFootTrafficTool on the most promising candidates. For event analysis, use searchEventsTool with a within parameter centered on the target area to see if events are driving traffic.
+        - **Step B: Analyze Constraints:** For the candidates you found, use other tools to check the constraints. For foot traffic analysis, use the getFootTrafficSummaryTool on the most promising candidates. For event analysis, use searchEventsTool with the explicit latitude, longitude, and radius_km parameters to see if events are driving traffic.
         - **Step C: Synthesize and Filter:** Collect all the data and filter down the results to only those that best match the user's original request (e.g., places that actually have high foot traffic, areas with fewer competitors).
 
     4.  **Format the Final Output:** Convert your final, synthesized data into a valid GeoJSON FeatureCollection. Ensure every feature has the correct geometry (Point), coordinate order ([longitude, latitude]), and detailed properties.
@@ -34,7 +34,7 @@ export const mapOrchestratorAgent = new Agent({
     searchEventsTool,
     getWeatherTool,
     getIpLocationTool,
-    getFootTrafficTool,
+    getFootTrafficSummaryTool,
   },
 });
 
