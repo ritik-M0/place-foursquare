@@ -123,36 +123,34 @@ export const searchEventsTool = createTool({
     ),
   }),
   execute: async ({ context }) => {
-    const {
-      q,
-      limit,
-      offset,
-      country,
-      within,
-      category,
-      label,
-      'start.gte': startGte,
-      'start.lte': startLte,
-      'end.gte': endGte,
-      'end.lte': endLte,
-      'active.gte': activeGte,
-      'active.lte': activeLte,
-      'updated.gte': updatedGte,
-      'updated.lte': updatedLte,
-      state,
-      sort,
-      'rank.gte': rankGte,
-      'rank.lte': rankLte,
-      'local_rank.gte': localRankGte,
-      'local_rank.lte': localRankLte,
-      'aviation_rank.gte': aviationRankGte,
-      'aviation_rank.lte': aviationRankLte,
-      place_id,
-      relevance,
-      brand_safe,
-      deleted_reason,
-      duplicate_of_id,
-    } = context;
+    const { q, limit, offset, country, category, label, state, sort, place_id, relevance, brand_safe, deleted_reason, duplicate_of_id } = context;
+    const startGte = context['start.gte'];
+    const startLte = context['start.lte'];
+    const endGte = context['end.gte'];
+    const endLte = context['end.lte'];
+    const activeGte = context['active.gte'];
+    const activeLte = context['active.lte'];
+    const updatedGte = context['updated.gte'];
+    const updatedLte = context['updated.lte'];
+    const rankGte = context['rank.gte'];
+    const rankLte = context['rank.lte'];
+    const localRankGte = context['local_rank.gte'];
+    const localRankLte = context['local_rank.lte'];
+    const aviationRankGte = context['aviation_rank.gte'];
+    const aviationRankLte = context['aviation_rank.lte'];
+
+    let resolvedWithin = context.within;
+
+    // Handle incorrect format from LLM: lat,lng;radius_in_meters
+    if (resolvedWithin && resolvedWithin.includes(';')) {
+      const parts = resolvedWithin.split(';');
+      const coords = parts[0];
+      const radiusMeters = parseInt(parts[1], 10);
+      if (coords && !isNaN(radiusMeters)) {
+        const radiusKm = Math.round(radiusMeters / 1000);
+        resolvedWithin = `${radiusKm}km@${coords}`;
+      }
+    }
 
     const apiKey = process.env.PREDICTHQ_API_KEY;
 
@@ -171,7 +169,7 @@ export const searchEventsTool = createTool({
     if (limit) params.append('limit', limit.toString());
     if (offset) params.append('offset', offset.toString());
     if (country) params.append('country', country);
-    if (within) params.append('within', within);
+    if (resolvedWithin) params.append('within', resolvedWithin);
     if (category) params.append('category', category);
     if (label) params.append('label', label);
     if (startGte) params.append('start.gte', startGte);

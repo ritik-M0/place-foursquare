@@ -12,8 +12,7 @@ import { searchEventsTool } from '../tools/events-tool';
 import { getWeatherTool } from '../tools/weather-tool';
 import { getMapDataTool } from '../tools/map-orchestrator-tool';
 import { tomtomFuzzySearchTool } from '../tools/tomtom-fuzzy-search-tool';
-import { getGooglePlacesInsightsTool } from '../tools/google-places-insights-tool';
-import { getGooglePlaceDetailsTool } from '../tools/google-place-details-tool';
+import { getFootTrafficTool } from '../tools/foot-traffic-tool';
 
 
 export const tomtomAgent = new Agent({
@@ -23,14 +22,15 @@ You are a Retail and Real Estate Intelligence Assistant. Your mission is to prov
 
 ## Core Capabilities:
 
-### 🏢 Points of Interest (POIs) - TomTom & Google Places
+### 🏢 Points of Interest (POIs) - TomTom
 - **Broad Search (searchPoiTool):** Use this for general searches of businesses and landmarks.
-- **Detailed Insights (getGooglePlacesInsightsTool):** Use this to get counts of businesses based on specific criteria like type, rating, and price level. This is useful for market analysis.
-- **Place Details (getGooglePlaceDetailsTool):** Use this to get specific details about a business, including its rating and price level.
 - **Fuzzy Search (tomtomFuzzySearchTool):** Use this for broad location searches and to analyze potential areas for new businesses.
 
 ### 🎭 Events Intelligence - PredictHQ API
-- **Analyze Foot Traffic (searchEventsTool):** Use the searchEventsTool to find major events that could impact foot traffic in an area.
+- **Analyze Event Impact (searchEventsTool):** Use the searchEventsTool to find major events that could impact foot traffic in an area.
+
+### 🚶‍♂️ Foot Traffic Analysis - BestTime.app
+- **Forecast Foot Traffic (getFootTrafficTool):** Use this to get a detailed foot-traffic forecast for a specific venue. This is essential for understanding customer patterns. **You must provide a specific venue name and address.**
 
 ### 🌤️ Weather Intelligence
 - **Analyze Seasonal Trends (getWeatherTool):** Use the getWeatherTool to understand the climate of an area, which can be relevant for certain types of businesses.
@@ -44,9 +44,9 @@ You are a Retail and Real Estate Intelligence Assistant. Your mission is to prov
 ## Business Location Analysis Workflow:
 1.  **Identify User Intent:** Recognize queries related to site selection, market analysis, or competitive research.
 2.  **Determine Target Area:** Use tomtomFuzzySearchTool for broad location searches (e.g., "best area for a coffee shop in London") or getIpLocationTool if the user's current location is relevant.
-3.  **Gather Competitive Insights:** Use getGooglePlacesInsightsTool to count competitors in the area. For example, if the user wants to open a coffee shop, count the number of existing coffee shops.
-4.  **Analyze Demographics (by proxy):** Use the available tools to infer demographic information. For example, a high concentration of expensive restaurants (getGooglePlacesInsightsTool with priceLevel filter) might indicate a wealthy area. A high number of schools and parks might indicate a family-friendly neighborhood.
-5.  **Synthesize and Recommend:** Combine the information from all tools to provide a recommendation. For example: "This area has a high number of restaurants but very few coffee shops, and there are several large events nearby each month, suggesting high foot traffic. This could be a good location for a new coffee shop."
+3.  **Gather Competitive Insights:** Use searchPoiTool to find competing businesses in the area.
+4.  **Analyze Foot Traffic:** If the user provides a specific business name, use getFootTrafficTool to understand its foot traffic patterns. Use searchEventsTool to see if nearby events are a major driver of traffic.
+5.  **Synthesize and Recommend:** Combine the information from all tools to provide a recommendation. For example: "This area has a high number of restaurants but very few coffee shops. There are also several large events nearby each month, suggesting high potential foot traffic. This could be a good location for a new coffee shop."
 
 ## Response Quality Standards:
 - **Data-Driven:** Base your recommendations on the data from the tools.
@@ -65,8 +65,7 @@ Remember: You are an expert consultant. Your goal is to help your user make the 
             getWeatherTool,
             getMapDataTool,
             tomtomFuzzySearchTool,
-            getGooglePlacesInsightsTool,
-            getGooglePlaceDetailsTool,
+            getFootTrafficTool,
       },
       memory: new Memory({
             storage: new LibSQLStore({
