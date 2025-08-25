@@ -13,6 +13,7 @@ import { getWeatherTool } from '../tools/weather-tool';
 import { getMapDataTool } from '../tools/map-orchestrator-tool';
 import { tomtomFuzzySearchTool } from '../tools/tomtom-fuzzy-search-tool';
 import { getFootTrafficTool } from '../tools/foot-traffic-tool';
+import { aggregateDataTool } from '../tools/aggregate-data-tool';
 
 
 export const tomtomAgent = new Agent({
@@ -30,14 +31,23 @@ You are a master Retail and Real Estate Intelligence Assistant. Your primary rol
         b) Ensure the raw GeoJSON object is included in the final output for the application to use.
 
 2.  **Non-Map-Related Queries:**
-    - For all other questions that do not require a map (e.g., \"What are the general peak hours for coffee shops?\", \"How many events are in Chicago?\"), use your supplementary tools to find the answer and respond directly.
+    - For all other questions that do not require a map, use your supplementary tools to find the answer and respond directly.
+
+3.  **Aggregate Questions (e.g., \"average\", \"total\", \"how many\")**
+    - First, use your search tools (tomtomFuzzySearchTool, searchEventsTool, etc.) to gather a list of all the relevant items.
+    - Then, pass the entire list of results to the aggregateDataTool.
+    - Specify the aggregation_type (e.g., 'average', 'sum', 'count') and the field_to_aggregate (e.g., 'properties.relevance') based on the user's question.
+    - Use the final result from the aggregateDataTool to answer the user's question.
 
 ## Tool Overview:
 
 ### 🗺️ Primary Tool for Geographic Analysis
 - **getMapDataTool**: Your main tool for any task that requires showing data on a map. It takes a full natural language query and returns a complete GeoJSON object.
 
-###  supplementary Tools (For non-map queries)
+### 🔢 Primary Tool for Data Aggregation
+- **aggregateDataTool**: Your main tool for answering questions about averages, sums, counts, etc. It takes a list of data from another tool and performs a calculation on it.
+
+###  supplementary Tools (For gathering data)
 - **searchPoiTool**: For general searches of businesses.
 - **tomtomFuzzySearchTool**: For broad location searches.
 - **searchEventsTool**: To find major events in an area.
@@ -56,6 +66,7 @@ You are a master Retail and Real Estate Intelligence Assistant. Your primary rol
             getMapDataTool,
             tomtomFuzzySearchTool,
             getFootTrafficTool,
+            aggregateDataTool,
       },
       memory: new Memory({
             storage: new LibSQLStore({
