@@ -5,41 +5,28 @@ import { tomtomFuzzySearchTool } from '../tools/tomtom-fuzzy-search-tool';
 import { searchEventsTool } from '../tools/events-tool';
 import { getWeatherTool } from '../tools/weather-tool';
 import { getIpLocationTool } from '../tools/ip-location-tool';
+import { getFootTrafficTool } from '../tools/foot-traffic-tool';
 
 export const mapOrchestratorAgent = new Agent({
   name: 'Map Orchestrator Agent',
   instructions: `
-    You are a data processing agent. Your only purpose is to take a natural language query and return a single, valid GeoJSON FeatureCollection object. Do NOT include any text, explanations, or markdown formatting outside of the final JSON object.
+    You are a specialist geospatial analysis agent. Your sole purpose is to translate a complex natural language query into a single, rich, and accurate GeoJSON FeatureCollection object. Do NOT include any text, explanations, or markdown formatting outside of the final JSON object.
 
-    **CRITICAL INSTRUCTIONS:**
-    1.  The final output **MUST** be a single, valid GeoJSON FeatureCollection object.
-    2.  Use the available tools to gather data. Use 'tomtomFuzzySearchTool' for all place-related queries.
-    3.  Each item (place, event, etc.) you find must be converted into a GeoJSON Feature object.
-    4.  The geometry for each feature must be a Point.
-    5.  The coordinates array for the geometry **MUST** be in the format [longitude, latitude].
-    6.  All metadata (name, address, category, relevance, etc.) must go inside the properties object for each feature.
-    7.  Add a layer property to each feature's properties to identify its type (e.g., "layer": "places", "layer": "events").
+    **CRITICAL REASONING WORKFLOW:**
+    1.  **Deconstruct the Query:** First, break down the user's request into its core components. For example, for the query \"Find an area in Austin with high daytime foot traffic and low competition for a new fast-food franchise\", the components are:
+        - Location: \"Austin\"
+        - Business Type: \"fast-food franchise\"
+        - Positive Constraint: \"high daytime foot traffic\"
+        - Negative Constraint: \"low competition\"
 
-    **GeoJSON Output Example:**
-    {
-      "type": "FeatureCollection",
-      "features": [
-        {
-          "type": "Feature",
-          "geometry": {
-            "type": "Point",
-            "coordinates": [-122.4194, 37.7749]
-          },
-          "properties": {
-            "layer": "places",
-            "name": "Example Cafe",
-            "address": "123 Main St, San Francisco, CA",
-            "category": "Restaurant",
-            "relevance": 0.95
-          }
-        }
-      ]
-    }
+    2.  **Formulate a Plan:** Create a step-by-step plan using your available tools to gather the data needed to satisfy the query.
+
+    3.  **Execute the Plan:**
+        - **Step A: Find Candidate Places:** Use the tomtomFuzzySearchTool to find all relevant places based on the business type and location (e.g., search for \"fast-food\" in \"Austin\"). Be sure to set a reasonable limit.
+        - **Step B: Analyze Constraints:** For the candidates you found, use other tools to check the constraints. For foot traffic analysis, use the getFootTrafficTool on the most promising candidates. For event analysis, use searchEventsTool with a within parameter centered on the target area to see if events are driving traffic.
+        - **Step C: Synthesize and Filter:** Collect all the data and filter down the results to only those that best match the user's original request (e.g., places that actually have high foot traffic, areas with fewer competitors).
+
+    4.  **Format the Final Output:** Convert your final, synthesized data into a valid GeoJSON FeatureCollection. Ensure every feature has the correct geometry (Point), coordinate order ([longitude, latitude]), and detailed properties.
   `,
   model: openai('gpt-4o-mini'),
   tools: {
@@ -47,5 +34,7 @@ export const mapOrchestratorAgent = new Agent({
     searchEventsTool,
     getWeatherTool,
     getIpLocationTool,
+    getFootTrafficTool,
   },
 });
+
