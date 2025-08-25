@@ -67,7 +67,7 @@ const mapDataSchema = z.object({
 
 export const getMapDataTool = createTool({
   id: 'get-map-data',
-  description: 'Get structured map data for a given query. Use this tool when the user asks to see results on a map.',
+  description: 'Primary tool for all geographic analysis and visualization. Use this for any query that involves finding, analyzing, or showing locations on a map. It takes a natural language query and returns a complete GeoJSON object ready for plotting.',
   inputSchema: z.object({
     query: z.string().describe('The natural language query to search for (e.g., "restaurants in London", "parks near me").'),
   }),
