@@ -99,6 +99,26 @@ export const tomtomFuzzySearchTool = createTool({
       );
     }
 
+    let resolvedGeobias = geobias;
+    if (geobias && !geobias.startsWith('point:') && !geobias.startsWith('rectangle:')) {
+      const geocodeUrl = new URL(`${baseURL}/search/${tomtomApiVersion}/geocode/${encodeURIComponent(geobias)}.json`);
+      geocodeUrl.searchParams.append('key', apiKey);
+      geocodeUrl.searchParams.append('limit', '1');
+
+      const geocodeResponse = await fetch(geocodeUrl.toString());
+      if (geocodeResponse.ok) {
+        const geocodeData = await geocodeResponse.json();
+        if (geocodeData.results && geocodeData.results.length > 0) {
+          const { lat, lon } = geocodeData.results[0].position;
+          resolvedGeobias = `point:${lat},${lon}`;
+        } else {
+          resolvedGeobias = undefined; // Could not resolve, so remove bias
+        }
+      } else {
+        resolvedGeobias = undefined; // Could not resolve, so remove bias
+      }
+    }
+
     const url = new URL(`${baseURL}/search/${tomtomApiVersion}/search/${encodeURIComponent(query)}.json`);
     url.searchParams.append('key', apiKey);
 
@@ -111,7 +131,7 @@ export const tomtomFuzzySearchTool = createTool({
     if (radius !== undefined) url.searchParams.append('radius', radius.toString());
     if (topLeft) url.searchParams.append('topLeft', topLeft);
     if (btmRight) url.searchParams.append('btmRight', btmRight);
-    if (geobias) url.searchParams.append('geobias', geobias);
+    if (resolvedGeobias) url.searchParams.append('geobias', resolvedGeobias);
     if (language) url.searchParams.append('language', language);
     if (minFuzzyLevel !== undefined) url.searchParams.append('minFuzzyLevel', minFuzzyLevel.toString());
     if (maxFuzzyLevel !== undefined) url.searchParams.append('maxFuzzyLevel', maxFuzzyLevel.toString());
