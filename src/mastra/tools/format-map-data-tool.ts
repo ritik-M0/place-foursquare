@@ -19,10 +19,13 @@ const GeoJsonFeatureCollectionSchema = z.object({
 export const formatMapDataTool = createTool({
   id: 'format-map-data',
   description: 'Consolidates raw geospatial data from various tool outputs into a single GeoJSON FeatureCollection.',
-  inputSchema: z.record(z.any()).describe('A JSON object containing raw results from executed geospatial tool calls.'),
+  inputSchema: z.object({
+    rawData: z.record(z.any()).describe('A JSON object containing raw results from executed geospatial tool calls.')
+  }),
   outputSchema: GeoJsonFeatureCollectionSchema.describe('A GeoJSON FeatureCollection object containing all identified geospatial features.'),
   execute: async ({ context }) => {
-    const rawData = context;
+    const rawData = context.rawData;
+    console.log('FormatMapDataTool received rawData:', JSON.stringify(rawData, null, 2));
     const features: z.infer<typeof GeoJsonFeatureSchema>[] = [];
 
     // Helper to add a feature
@@ -35,8 +38,9 @@ export const formatMapDataTool = createTool({
     };
 
     // Process TomTom Fuzzy Search results
-    if (rawData['tomtom-fuzzy-search'] && rawData['tomtom-fuzzy-search'].results) {
-      for (const result of rawData['tomtom-fuzzy-search'].results) {
+    const tomtomData = rawData['tomtomFuzzySearchTool'] || rawData['tomtom-fuzzy-search'];
+    if (tomtomData && tomtomData.results) {
+      for (const result of tomtomData.results) {
         if (result.position && result.position.lat && result.position.lon) {
           addFeature(
             {
@@ -55,8 +59,9 @@ export const formatMapDataTool = createTool({
     }
 
     // Process Google Place Details results
-    if (rawData['get-google-place-details'] && rawData['get-google-place-details'].result) {
-      const place = rawData['get-google-place-details'].result;
+    const googlePlaceData = rawData['getGooglePlaceDetailsTool'] || rawData['get-google-place-details'];
+    if (googlePlaceData && googlePlaceData.result) {
+      const place = googlePlaceData.result;
       if (place.location && place.location.latitude && place.location.longitude) {
         addFeature(
           {
@@ -77,12 +82,13 @@ export const formatMapDataTool = createTool({
     // Process Google Places Insights results (if it returns place IDs, you might need to fetch details)
     // For simplicity, this tool assumes it gets enough info to create a point.
     // In a real scenario, if insights only give IDs, you'd need another tool call to get details.
-    if (rawData['get-google-places-insights'] && rawData['get-google-places-insights'].places) {
+    const googleInsightsData = rawData['getGooglePlacesInsightsTool'] || rawData['get-google-places-insights'];
+    if (googleInsightsData && googleInsightsData.places) {
         // This part is tricky. get-google-places-insights only returns place IDs.
         // To get coordinates, you'd typically need to call get-google-place-details for each ID.
         // For this tool, we'll assume the rawData might contain pre-fetched details or
         // we'll just add a placeholder if only IDs are available.
-        for (const placeId of rawData['get-google-places-insights'].places) {
+        for (const placeId of googleInsightsData.places) {
             // If the rawData also contains details for this placeId, use them
             // Otherwise, just add a feature with the ID
             addFeature(
@@ -93,8 +99,9 @@ export const formatMapDataTool = createTool({
     }
 
     // Process searchEventsTool results
-    if (rawData['search-events'] && rawData['search-events'].results) {
-      for (const event of rawData['search-events'].results) {
+    const eventsData = rawData['searchEventsTool'] || rawData['search-events'];
+    if (eventsData && eventsData.results) {
+      for (const event of eventsData.results) {
         if (event.location && event.location.coordinates) {
           addFeature(
             {
@@ -114,15 +121,54 @@ export const formatMapDataTool = createTool({
     }
 
     // Add more processing for other geospatial tools as needed (e.g., IP location)
-    if (rawData['get-ip-location'] && rawData['get-ip-location'].latitude && rawData['get-ip-location'].longitude) {
+    const ipLocationData = rawData['getIpLocationTool'] || rawData['get-ip-location'];
+    if (ipLocationData && ipLocationData.latitude && ipLocationData.longitude) {
       addFeature(
         {
           type: 'Point',
-          coordinates: [rawData['get-ip-location'].longitude, rawData['get-ip-location'].latitude],
+          coordinates: [ipLocationData.longitude, ipLocationData.latitude],
         },
         {
-          city: rawData['get-ip-location'].city,
+          city: ipLocationData.city,
           source: 'IP Location',
+        }
+      );
+    }
+
+    // Process searchPoiTool results
+    const searchPoiData = rawData['searchPoiTool'];
+    if (searchPoiData && searchPoiData.results) {
+      for (const result of searchPoiData.results) {
+        if (result.position && result.position.lat && result.position.lon) {
+          addFeature(
+            {
+              type: 'Point',
+              coordinates: [result.position.lon, result.position.lat],
+            },
+            {
+              name: result.poi?.name || result.address?.freeformAddress,
+              address: result.address?.freeformAddress,
+              category: result.poi?.categories?.[0],
+              source: 'TomTom POI Search',
+            }
+          );
+        }
+      }
+    }
+
+    // Process getPlaceByIdTool results
+    const placeByIdData = rawData['getPlaceByIdTool'];
+    if (placeByIdData && placeByIdData.position) {
+      addFeature(
+        {
+          type: 'Point',
+          coordinates: [placeByIdData.position.lon, placeByIdData.position.lat],
+        },
+        {
+          name: placeByIdData.poi?.name || placeByIdData.address?.freeformAddress,
+          address: placeByIdData.address?.freeformAddress,
+          category: placeByIdData.poi?.categories?.[0],
+          source: 'TomTom Place Details',
         }
       );
     }
