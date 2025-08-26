@@ -22,7 +22,11 @@ export const executePlanTool = createTool({
     // CRITICAL FIX: Don't call executePlanTool recursively!
     // Skip execution if the tool being called is executePlanTool itself
     for (const toolCall of plan) {
-      const toolId = toolCall.tool;
+      let toolId = toolCall.tool;
+      // Remove "functions." prefix if present
+      if (toolId.startsWith('functions.')) {
+        toolId = toolId.substring('functions.'.length);
+      }
       const toolArgs = toolCall.args || {};
 
       // PREVENT INFINITE LOOP: Skip if trying to call executePlanTool

@@ -68,10 +68,13 @@ export const getFootTrafficSummaryTool = createTool({
       }
     }
 
-    let peakHoursSummary = 'Not available';
+    let peakHoursSummary = ''; // Default to empty string
     if (busiestDay && busiestDay.peak_hours && busiestDay.peak_hours.length > 0) {
       const peak = busiestDay.peak_hours[0];
-      peakHoursSummary = `${busiestDay.day_info.day_text} from ${peak.peak_start}:00 to ${peak.peak_end}:00`;
+      if (peak.peak_start !== undefined && peak.peak_end !== undefined && peak.peak_start !== null && peak.peak_end !== null) {
+        peakHoursSummary = `${busiestDay.day_info.day_text} from ${peak.peak_start}:00 to ${peak.peak_end}:00`;
+      }
+      // If peak_start or peak_end are missing, peakHoursSummary remains an empty string.
     }
 
     return {
