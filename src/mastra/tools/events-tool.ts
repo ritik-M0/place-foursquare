@@ -40,7 +40,9 @@ export const searchEventsTool = createTool({
     limit: z.number().min(1).max(1000).optional().default(10).describe('Number of events to return (1-1000)'),
     offset: z.number().min(0).optional().describe('Number of results to skip for pagination'),
     country: z.string().length(2).optional().describe('Filter by 2-letter ISO country code (e.g., "US", "GB", "AU")'),
-    within: z.string().optional().describe('Filter by radius around coordinates (format: "10km@lat,lng" e.g., "10km@-33.8688,151.2093")'),
+    latitude: z.number().optional().describe('Latitude for the center of the search radius.'),
+    longitude: z.number().optional().describe('Longitude for the center of the search radius.'),
+    radius_km: z.number().optional().describe('Radius in kilometers for the search.'),
     category: z.enum(CATEGORIES).optional().describe('Filter by event category'),
     label: z.string().optional().describe('Filter by event labels (e.g., "nfl", "nba", "concert-tour")'),
     'start.gte': z.string().optional().describe('Events starting on or after this date (ISO 8601: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SSZ)'),
@@ -123,7 +125,7 @@ export const searchEventsTool = createTool({
     ),
   }),
   execute: async ({ context }) => {
-    const { q, limit, offset, country, category, label, state, sort, place_id, relevance, brand_safe, deleted_reason, duplicate_of_id } = context;
+    const { q, limit, offset, country, latitude, longitude, radius_km, category, label, state, sort, place_id, relevance, brand_safe, deleted_reason, duplicate_of_id } = context;
     const startGte = context['start.gte'];
     const startLte = context['start.lte'];
     const endGte = context['end.gte'];
@@ -139,17 +141,9 @@ export const searchEventsTool = createTool({
     const aviationRankGte = context['aviation_rank.gte'];
     const aviationRankLte = context['aviation_rank.lte'];
 
-    let resolvedWithin = context.within;
-
-    // Handle incorrect format from LLM: lat,lng;radius_in_meters
-    if (resolvedWithin && resolvedWithin.includes(';')) {
-      const parts = resolvedWithin.split(';');
-      const coords = parts[0];
-      const radiusMeters = parseInt(parts[1], 10);
-      if (coords && !isNaN(radiusMeters)) {
-        const radiusKm = Math.round(radiusMeters / 1000);
-        resolvedWithin = `${radiusKm}km@${coords}`;
-      }
+    let within;
+    if (latitude && longitude && radius_km) {
+      within = `${radius_km}km@${latitude},${longitude}`;
     }
 
     const apiKey = process.env.PREDICTHQ_API_KEY;
@@ -169,7 +163,7 @@ export const searchEventsTool = createTool({
     if (limit) params.append('limit', limit.toString());
     if (offset) params.append('offset', offset.toString());
     if (country) params.append('country', country);
-    if (resolvedWithin) params.append('within', resolvedWithin);
+    if (within) params.append('within', within);
     if (category) params.append('category', category);
     if (label) params.append('label', label);
     if (startGte) params.append('start.gte', startGte);
