@@ -27,8 +27,6 @@ export const plannerAgent = new Agent({
         *   For weather, use 'getWeatherTool'.
         *   For IP-based location, use 'getIpLocationTool'.
         *   For foot traffic summaries, use 'getFootTrafficSummaryTool'.
-        *   For detailed Google Place information, use 'getGooglePlaceDetailsTool'.
-        *   For Google Places insights (counts, lists of places by criteria), use 'getGooglePlacesInsightsTool'.
         *   **For aggregate questions (e.g., "average", "sum", "count", "max", "min"), ALWAYS use 'getAggregatedMetricTool'.**
     4.  **Formulate Tool Calls:** Construct the exact tool calls, including all necessary parameters.
     5.  **Output ONLY Tool Calls:** Your response MUST be a JSON array of tool call objects. Do NOT include any text, explanations, or markdown formatting outside of the JSON array. Each object in the array must have 'tool' (string, the tool ID) and 'args' (object, the tool's arguments).
@@ -53,15 +51,13 @@ export const plannerAgent = new Agent({
       }
     ]
   `,
-  model: openai('gpt-4o-mini'),
+  model: openai('gpt-4.1-2025-04-14'),
   tools: {
     tomtomFuzzySearchTool,
     searchEventsTool,
     getWeatherTool,
     getIpLocationTool,
     getFootTrafficSummaryTool,
-    getGooglePlaceDetailsTool,
-    getGooglePlacesInsightsTool,
     searchPoiTool,
     getAggregatedMetricTool,
   },

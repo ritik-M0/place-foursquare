@@ -38,7 +38,7 @@ export const mapDataAgent = new Agent({
 
     **Important Note:** You must follow these steps sequentially. Do not skip steps or try to combine them.
   `,
-  model: openai('gpt-4o-mini'),
+  model: openai('gpt-4.1-2025-04-14'),
   tools: {
     // Orchestration tools for this agent
     planTool,
