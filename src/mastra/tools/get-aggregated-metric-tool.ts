@@ -13,19 +13,34 @@ const getNestedValue = (obj: any, path: string): number | undefined => {
 
 export const getAggregatedMetricTool = createTool({
   id: 'get-aggregated-metric',
-  description: 'Performs a search and then calculates an aggregate metric (average, sum, count) on the results. Use this for questions like "What is the average rating..." or "How many cafes...".',
+  description:
+    'Performs a search and then calculates an aggregate metric (average, sum, count) on the results. Use this for questions like "What is the average rating..." or "How many cafes...".',
   inputSchema: z.object({
-    search_query: z.string().describe('The item to search for (e.g., "5-star hotels", "Starbucks").'),
-    location: z.string().describe('The geographic area to search within (e.g., "Las Vegas", "Chicago").'),
-    aggregation_type: z.enum(['average', 'sum', 'count', 'max', 'min']).describe('The type of calculation to perform.'),
-    field_to_aggregate: z.string().optional().describe('The field in the search results to perform the calculation on. Required for all aggregations except "count". Use dot notation for nested fields (e.g., "score").'),
+    search_query: z
+      .string()
+      .describe('The item to search for (e.g., "5-star hotels", "Starbucks").'),
+    location: z
+      .string()
+      .describe(
+        'The geographic area to search within (e.g., "Las Vegas", "Chicago").',
+      ),
+    aggregation_type: z
+      .enum(['average', 'sum', 'count', 'max', 'min'])
+      .describe('The type of calculation to perform.'),
+    field_to_aggregate: z
+      .string()
+      .optional()
+      .describe(
+        'The field in the search results to perform the calculation on. Required for all aggregations except "count". Use dot notation for nested fields (e.g., "score").',
+      ),
   }),
   outputSchema: z.object({
     result: z.number().describe('The result of the aggregation.'),
     description: z.string().describe('A human-readable summary of the result.'),
   }),
   execute: async ({ context }) => {
-    const { search_query, location, aggregation_type, field_to_aggregate } = context;
+    const { search_query, location, aggregation_type, field_to_aggregate } =
+      context;
     const apiKey = process.env.TOMTOM_API_KEY;
 
     if (!apiKey) {
@@ -33,14 +48,18 @@ export const getAggregatedMetricTool = createTool({
     }
 
     // --- Step 1: Search for the data using TomTom API ---
-    const searchUrl = new URL(`${baseURL}/search/${tomtomApiVersion}/search/${encodeURIComponent(search_query)}.json`);
+    const searchUrl = new URL(
+      `${baseURL}/search/${tomtomApiVersion}/search/${encodeURIComponent(search_query)}.json`,
+    );
     searchUrl.searchParams.append('key', apiKey);
     searchUrl.searchParams.append('query', location); // Use location to constrain the search
     searchUrl.searchParams.append('limit', '100'); // Get a good number of results to analyze
 
     const searchResponse = await fetch(searchUrl.toString());
     if (!searchResponse.ok) {
-      throw new Error(`TomTom search request failed with status ${searchResponse.status}`);
+      throw new Error(
+        `TomTom search request failed with status ${searchResponse.status}`,
+      );
     }
     const searchData = await searchResponse.json();
     const data = searchData.results || [];
@@ -54,7 +73,9 @@ export const getAggregatedMetricTool = createTool({
     }
 
     if (!field_to_aggregate) {
-        throw new Error('The `field_to_aggregate` parameter is required for this type of aggregation.');
+      throw new Error(
+        'The `field_to_aggregate` parameter is required for this type of aggregation.',
+      );
     }
 
     const validValues: number[] = [];
@@ -68,7 +89,7 @@ export const getAggregatedMetricTool = createTool({
     if (validValues.length === 0) {
       return {
         result: 0,
-        description: `Could not find any valid data for the field '${field_to_aggregate}' in the search results.`
+        description: `Could not find any valid data for the field '${field_to_aggregate}' in the search results.`,
       };
     }
 
@@ -78,7 +99,8 @@ export const getAggregatedMetricTool = createTool({
         result = validValues.reduce((acc, val) => acc + val, 0);
         break;
       case 'average':
-        result = validValues.reduce((acc, val) => acc + val, 0) / validValues.length;
+        result =
+          validValues.reduce((acc, val) => acc + val, 0) / validValues.length;
         break;
       case 'max':
         result = Math.max(...validValues);

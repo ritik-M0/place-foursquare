@@ -63,5 +63,4 @@ export const plannerAgent = new Agent({
   },
   // Define the output schema for the agent's direct response
   // This is what the agent is instructed to output directly
-  
 });

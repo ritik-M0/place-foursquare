@@ -3,16 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
-import { HealthModule } from './health/health.module';
-import { PlacesModule } from './places/places.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    PrismaModule,
-    HealthModule,
-    PlacesModule,
-  ],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, ChatModule],
   controllers: [AppController],
   providers: [AppService],
 })

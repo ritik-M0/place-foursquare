@@ -4,16 +4,23 @@ import { plannerAgent } from '../agents/planner-agent'; // Import the new planne
 
 export const planTool = createTool({
   id: 'plan-query',
-  description: 'Generates a step-by-step plan of tool calls to fulfill a user query. This tool should be used first to determine what actions are needed.',
+  description:
+    'Generates a step-by-step plan of tool calls to fulfill a user query. This tool should be used first to determine what actions are needed.',
   inputSchema: z.object({
-    query: z.string().describe('The natural language query from the user that needs to be planned.'),
+    query: z
+      .string()
+      .describe(
+        'The natural language query from the user that needs to be planned.',
+      ),
   }),
-  outputSchema: z.array(
-    z.object({
-      tool: z.string().describe('The ID of the tool to call.'),
-      args: z.record(z.any()).describe('The arguments for the tool call.'),
-    })
-  ).describe('A JSON array representing the plan of tool calls.'),
+  outputSchema: z
+    .array(
+      z.object({
+        tool: z.string().describe('The ID of the tool to call.'),
+        args: z.record(z.any()).describe('The arguments for the tool call.'),
+      }),
+    )
+    .describe('A JSON array representing the plan of tool calls.'),
   execute: async ({ context }) => {
     const { query } = context;
     // The planner agent is designed to output only the JSON array of tool calls

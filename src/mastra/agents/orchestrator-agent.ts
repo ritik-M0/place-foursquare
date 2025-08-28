@@ -20,7 +20,11 @@ import { getIpLocationTool } from '../tools/ip-location-tool';
 import { getFootTrafficSummaryTool } from '../tools/foot-traffic-summary-tool';
 import { getGooglePlaceDetailsTool } from '../tools/google-place-details-tool';
 import { getGooglePlacesInsightsTool } from '../tools/google-places-insights-tool';
-import { searchPoiTool, getPlaceByIdTool, getPoiPhotosTool } from '../tools/tomtom-tool';
+import {
+  searchPoiTool,
+  getPlaceByIdTool,
+  getPoiPhotosTool,
+} from '../tools/tomtom-tool';
 import { getAggregatedMetricTool } from '../tools/get-aggregated-metric-tool';
 import { getFootTrafficTool } from '../tools/foot-traffic-tool'; // getFootTrafficSummaryTool uses this internally
 

@@ -48,10 +48,15 @@ const errorOutputSchema = z.object({
 
 export const getFootTrafficTool = createTool({
   id: 'get-foot-traffic-forecast',
-  description: 'Get foot-traffic forecast for a venue based on a name and address.',
+  description:
+    'Get foot-traffic forecast for a venue based on a name and address.',
   inputSchema: z.object({
-    venue_name: z.string().describe('The name of the venue (e.g., "McDonalds").'),
-    venue_address: z.string().describe('The address of the venue (e.g., "Ocean Ave, San Francisco").'),
+    venue_name: z
+      .string()
+      .describe('The name of the venue (e.g., "McDonalds").'),
+    venue_address: z
+      .string()
+      .describe('The address of the venue (e.g., "Ocean Ave, San Francisco").'),
   }),
   outputSchema: z.union([successOutputSchema, errorOutputSchema]),
   execute: async ({ context }) => {
@@ -59,13 +64,15 @@ export const getFootTrafficTool = createTool({
     const apiKey = process.env.BESTTIME_API_KEY;
 
     if (!apiKey) {
-      throw new Error('BestTime.app API key not found. Please set the BESTTIME_API_KEY environment variable.');
+      throw new Error(
+        'BestTime.app API key not found. Please set the BESTTIME_API_KEY environment variable.',
+      );
     }
 
     const params = new URLSearchParams({
-      'api_key_private': apiKey,
-      'venue_name': venue_name,
-      'venue_address': venue_address,
+      api_key_private: apiKey,
+      venue_name: venue_name,
+      venue_address: venue_address,
     });
 
     const url = new URL(baseURL);
@@ -89,10 +96,12 @@ export const getFootTrafficTool = createTool({
         }
         return {
           status: 'Error',
-          message: message
+          message: message,
         };
       }
-      throw new Error(`BestTime.app API request failed with status ${response.status}: ${errorBodyText}`);
+      throw new Error(
+        `BestTime.app API request failed with status ${response.status}: ${errorBodyText}`,
+      );
     }
 
     const data = await response.json();

@@ -8,7 +8,9 @@ export const getGooglePlaceDetailsTool = createTool({
   description: 'Get details for a specific place using its Google Place ID.',
   inputSchema: z.object({
     placeId: z.string().describe('The Google Place ID of the place.'),
-    fields: z.array(z.string()).describe('The fields to return in the response.'),
+    fields: z
+      .array(z.string())
+      .describe('The fields to return in the response.'),
   }),
   outputSchema: z.any().describe('The place details as a JSON object.'),
   execute: async ({ context }) => {
@@ -16,7 +18,9 @@ export const getGooglePlaceDetailsTool = createTool({
     const apiKey = process.env.GOOGLE_API_KEY;
 
     if (!apiKey) {
-      throw new Error('Google API key not found. Please set the GOOGLE_API_KEY environment variable.');
+      throw new Error(
+        'Google API key not found. Please set the GOOGLE_API_KEY environment variable.',
+      );
     }
 
     const url = new URL(`${baseURL}${placeId}`);
@@ -32,7 +36,9 @@ export const getGooglePlaceDetailsTool = createTool({
 
     if (!response.ok) {
       const errorBody = await response.text();
-      throw new Error(`Google Place Details API request failed with status ${response.status}: ${errorBody}`);
+      throw new Error(
+        `Google Place Details API request failed with status ${response.status}: ${errorBody}`,
+      );
     }
 
     return await response.json();

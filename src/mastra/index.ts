@@ -8,7 +8,7 @@ import { plannerAgent } from './agents/planner-agent';
 import { summarizerAgent } from './agents/summarizer-agent';
 
 export const mastra: Mastra = new Mastra({
-  agents: { 
+  agents: {
     orchestratorAgent,
     mapDataAgent,
     plannerAgent,

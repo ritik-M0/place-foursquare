@@ -24,7 +24,6 @@ export const summarizerAgent = new Agent({
   // This agent does not have any tools
   tools: {},
   // Define the expected input structure for the summarizer
-  
+
   // The output is a simple string (the summary)
-  
 });

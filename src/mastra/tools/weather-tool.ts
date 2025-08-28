@@ -7,7 +7,9 @@ export const getWeatherTool = createTool({
   id: 'get-weather',
   description: 'Get the current weather for a specific city',
   inputSchema: z.object({
-    city: z.string().describe('The city to get the weather for (e.g., "London", "New York")'),
+    city: z
+      .string()
+      .describe('The city to get the weather for (e.g., "London", "New York")'),
   }),
   outputSchema: z.object({
     city: z.string(),
@@ -19,7 +21,9 @@ export const getWeatherTool = createTool({
     const apiKey = process.env.OPENWEATHERMAP_API_KEY;
 
     if (!apiKey) {
-      throw new Error('OpenWeatherMap API key not found. Please set the OPENWEATHERMAP_API_KEY environment variable.');
+      throw new Error(
+        'OpenWeatherMap API key not found. Please set the OPENWEATHERMAP_API_KEY environment variable.',
+      );
     }
 
     const url = new URL(baseURL);
@@ -30,7 +34,9 @@ export const getWeatherTool = createTool({
     const response = await fetch(url.toString());
 
     if (!response.ok) {
-      throw new Error(`OpenWeatherMap API request failed with status ${response.status}`);
+      throw new Error(
+        `OpenWeatherMap API request failed with status ${response.status}`,
+      );
     }
 
     const data = await response.json();
