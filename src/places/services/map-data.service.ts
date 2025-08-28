@@ -49,24 +49,68 @@ export class MapDataService {
         },
       ]);
 
-      // Extract structured response
-      const response = result.object || {
-        geojson: {
-          type: 'FeatureCollection',
-          features: [],
-        },
-        metadata: {
-          totalFeatures: 0,
-          bounds: validatedQuery.bounds || {
-            north: 0,
-            south: 0,
-            east: 0,
-            west: 0,
+      // Extract structured response - MapDataAgent returns GeoJSON as text
+      let response;
+      
+      if (result.object) {
+        // Agent returned structured object
+        response = result.object;
+      } else if (result.text) {
+        // MapDataAgent is instructed to return pure GeoJSON FeatureCollection as text
+        try {
+          const geojsonData = JSON.parse(result.text);
+          if (geojsonData.type === 'FeatureCollection') {
+            response = {
+              geojson: geojsonData,
+              metadata: {
+                totalFeatures: geojsonData.features?.length || 0,
+                bounds: geojsonData.bounds || validatedQuery.bounds || {
+                  north: 0, south: 0, east: 0, west: 0,
+                },
+                center: geojsonData.center,
+                sources: geojsonData.metadata?.sources || ['Map Data Agent'],
+                generatedAt: geojsonData.metadata?.generatedAt || new Date().toISOString(),
+              },
+            };
+          } else {
+            throw new Error('Invalid GeoJSON format');
+          }
+        } catch (e) {
+          // Fallback if agent didn't return valid GeoJSON
+          this.logger.warn(`Failed to parse MapDataAgent response as GeoJSON: ${e.message}`);
+          response = {
+            geojson: {
+              type: 'FeatureCollection',
+              features: [],
+            },
+            metadata: {
+              totalFeatures: 0,
+              bounds: validatedQuery.bounds || {
+                north: 0, south: 0, east: 0, west: 0,
+              },
+              sources: ['Map Data Agent'],
+              generatedAt: new Date().toISOString(),
+              error: `Failed to parse agent response: ${e.message}`,
+            },
+          };
+        }
+      } else {
+        // Fallback response
+        response = {
+          geojson: {
+            type: 'FeatureCollection',
+            features: [],
           },
-          sources: ['Map Data Agent'],
-          generatedAt: new Date().toISOString(),
-        },
-      };
+          metadata: {
+            totalFeatures: 0,
+            bounds: validatedQuery.bounds || {
+              north: 0, south: 0, east: 0, west: 0,
+            },
+            sources: ['Map Data Agent'],
+            generatedAt: new Date().toISOString(),
+          },
+        };
+      }
 
       this.logger.log(`Map data generation completed with ${response.geojson.features.length} features`);
       return response as MapDataResponseDto;

@@ -7,27 +7,27 @@ export enum ResponsePreference {
   TEXT = 'text',
   GEOJSON = 'geojson',
   STREAMING = 'streaming',
-  ANALYSIS = 'analysis'
+  ANALYSIS = 'analysis',
 }
 
 export enum ResponseType {
   TEXT = 'text',
   GEOJSON = 'geojson',
   ANALYSIS = 'analysis',
-  STREAMING = 'streaming'
+  STREAMING = 'streaming',
 }
 
 export class UnifiedChatDto {
   @ApiProperty({
     description: 'The user message/query',
-    example: 'Show me coffee shops in SoHo on a map'
+    example: 'Show me coffee shops in SoHo on a map',
   })
   @IsString()
   message: string;
 
   @ApiPropertyOptional({
     description: 'Session ID for conversation context',
-    example: 'user-123'
+    example: 'user-123',
   })
   @IsOptional()
   @IsString()
@@ -37,7 +37,7 @@ export class UnifiedChatDto {
     description: 'Response format preference',
     enum: ResponsePreference,
     default: ResponsePreference.AUTO,
-    example: ResponsePreference.AUTO
+    example: ResponsePreference.AUTO,
   })
   @IsOptional()
   @IsEnum(ResponsePreference)
@@ -45,7 +45,7 @@ export class UnifiedChatDto {
 
   @ApiPropertyOptional({
     description: 'Additional context for the query',
-    example: { userLocation: { lat: 40.7589, lon: -73.9851 } }
+    example: { userLocation: { lat: 40.7589, lon: -73.9851 } },
   })
   @IsOptional()
   @IsObject()
@@ -56,13 +56,13 @@ export class UnifiedChatResponseDto {
   @ApiProperty({
     description: 'Type of response returned',
     enum: ResponseType,
-    example: ResponseType.GEOJSON
+    example: ResponseType.GEOJSON,
   })
   type: ResponseType;
 
   @ApiProperty({
     description: 'The response data - format depends on type',
-    example: { type: 'FeatureCollection', features: [] }
+    example: { type: 'FeatureCollection', features: [] },
   })
   data: any;
 
@@ -72,8 +72,8 @@ export class UnifiedChatResponseDto {
       executionTime: 2340,
       agentsUsed: ['orchestratorAgent', 'mapDataAgent'],
       toolsUsed: ['tomtomFuzzySearchTool', 'formatMapDataTool'],
-      confidence: 0.95
-    }
+      confidence: 0.95,
+    },
   })
   metadata: {
     executionTime: number;
@@ -86,25 +86,31 @@ export class UnifiedChatResponseDto {
 
   @ApiProperty({
     description: 'Success status',
-    example: true
+    example: true,
   })
   success: boolean;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2025-08-26T13:52:42.000Z'
+    example: '2025-08-26T13:52:42.000Z',
   })
   timestamp: string;
 }
 
 // Zod schemas for validation
+
+// Unified Chat Input Validation, Used in processUnifiedChat service
 export const UnifiedChatSchema = z.object({
   message: z.string().min(1, 'Message cannot be empty'),
   sessionId: z.string().optional(),
-  responsePreference: z.nativeEnum(ResponsePreference).optional().default(ResponsePreference.AUTO),
+  responsePreference: z
+    .nativeEnum(ResponsePreference)
+    .optional()
+    .default(ResponsePreference.AUTO),
   context: z.record(z.any()).optional(),
 });
 
+// Unified Chat Output Validation
 export const UnifiedChatResponseSchema = z.object({
   type: z.nativeEnum(ResponseType),
   data: z.any(),

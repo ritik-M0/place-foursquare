@@ -31,19 +31,26 @@ export class AgentCoordinationService {
   async executeCoordinatedQuery(
     query: string,
     analysis: QueryAnalysis,
-    sessionId?: string
+    sessionId?: string,
   ): Promise<ExecutionResult> {
     const startTime = Date.now();
     const plan = this.createExecutionPlan(analysis);
-    
-    this.logger.log(`Executing coordinated query with ${plan.phases.length} phases`);
-    
+
+    this.logger.log(
+      `Executing coordinated query with ${plan.phases.length} phases`,
+    );
+
     try {
       const phaseResults = new Map<string, any>();
-      
+
       // Execute phases in order, respecting dependencies
       for (const phase of plan.phases) {
-        const phaseResult = await this.executePhase(phase, query, phaseResults, sessionId);
+        const phaseResult = await this.executePhase(
+          phase,
+          query,
+          phaseResults,
+          sessionId,
+        );
         phaseResults.set(phase.name, phaseResult);
       }
 
@@ -72,7 +79,9 @@ export class AgentCoordinationService {
     const phases: ExecutionPhase[] = [];
 
     // Always include map generation if locations are detected
-    const hasLocations = analysis.extractedEntities.locations && analysis.extractedEntities.locations.length > 0;
+    const hasLocations =
+      analysis.extractedEntities.locations &&
+      analysis.extractedEntities.locations.length > 0;
     const shouldGenerateMap = analysis.requiresMapping || hasLocations;
 
     switch (analysis.type) {
@@ -186,7 +195,7 @@ export class AgentCoordinationService {
     return {
       phases,
       estimatedDuration: this.estimateDuration(phases),
-      parallelizable: phases.some(p => p.parallel),
+      parallelizable: phases.some((p) => p.parallel),
     };
   }
 
@@ -194,9 +203,11 @@ export class AgentCoordinationService {
     phase: ExecutionPhase,
     query: string,
     previousResults: Map<string, any>,
-    sessionId?: string
+    sessionId?: string,
   ): Promise<any> {
-    this.logger.log(`Executing phase: ${phase.name} with agent: ${phase.agent}`);
+    this.logger.log(
+      `Executing phase: ${phase.name} with agent: ${phase.agent}`,
+    );
 
     const agent = mastra.getAgent(phase.agent);
     if (!agent) {
@@ -205,7 +216,7 @@ export class AgentCoordinationService {
 
     // Prepare context from previous phases
     const context = this.buildPhaseContext(phase, previousResults);
-    
+
     // Execute the agent with appropriate context
     const result = await agent.generate([
       {
@@ -217,9 +228,12 @@ export class AgentCoordinationService {
     return result;
   }
 
-  private buildPhaseContext(phase: ExecutionPhase, previousResults: Map<string, any>): any {
+  private buildPhaseContext(
+    phase: ExecutionPhase,
+    previousResults: Map<string, any>,
+  ): any {
     const context: any = {};
-    
+
     for (const dependency of phase.dependencies) {
       const depResult = previousResults.get(dependency);
       if (depResult) {
@@ -230,7 +244,11 @@ export class AgentCoordinationService {
     return context;
   }
 
-  private buildPhasePrompt(phase: ExecutionPhase, originalQuery: string, context: any): string {
+  private buildPhasePrompt(
+    phase: ExecutionPhase,
+    originalQuery: string,
+    context: any,
+  ): string {
     let prompt = `Original query: "${originalQuery}"\n\n`;
 
     if (Object.keys(context).length > 0) {
@@ -271,24 +289,27 @@ export class AgentCoordinationService {
     return prompt;
   }
 
-  private async combineResults(analysis: QueryAnalysis, phaseResults: Map<string, any>): Promise<any> {
+  private async combineResults(
+    analysis: QueryAnalysis,
+    phaseResults: Map<string, any>,
+  ): Promise<any> {
     const combinedResult: any = {
-      type: "analysis",
+      type: 'analysis',
       data: {
         summary: {
           queryType: analysis.type,
           extractedEntities: analysis.extractedEntities,
           analysis: {
-            text: "",
-            confidence: analysis.confidence
-          }
+            text: '',
+            confidence: analysis.confidence,
+          },
         },
         mapData: {
           type: 'FeatureCollection',
           features: [],
           bounds: null,
-          center: null
-        }
+          center: null,
+        },
       },
       metadata: {
         executionTime: 0,
@@ -296,14 +317,14 @@ export class AgentCoordinationService {
         toolsUsed: [],
         confidence: analysis.confidence,
         intent: this.getIntentFromQueryType(analysis.type),
-        detectedEntities: analysis.extractedEntities.locations || []
+        detectedEntities: analysis.extractedEntities.locations || [],
       },
       success: true,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     // Extract summary text from various sources
-    let summaryText = "";
+    let summaryText = '';
     if (phaseResults.has('summarization')) {
       const summaryResult = phaseResults.get('summarization');
       summaryText = this.extractTextFromResult(summaryResult);
@@ -321,7 +342,7 @@ export class AgentCoordinationService {
     if (phaseResults.has('map_generation')) {
       const mapResult = phaseResults.get('map_generation');
       console.log('Map generation result:', JSON.stringify(mapResult, null, 2));
-      
+
       // Check if the map result is already in the correct GeoJSON format
       if (mapResult && mapResult.type === 'FeatureCollection') {
         combinedResult.data.mapData = mapResult;
@@ -336,19 +357,35 @@ export class AgentCoordinationService {
           console.log('Failed to parse map data text as JSON:', e);
         }
       } else {
-        combinedResult.data.mapData = this.formatMapDataForMapbox(mapResult, analysis);
+        combinedResult.data.mapData = this.formatMapDataForMapbox(
+          mapResult,
+          analysis,
+        );
       }
     } else if (phaseResults.has('geospatial_data')) {
       const mapResult = phaseResults.get('geospatial_data');
-      combinedResult.data.mapData = this.formatMapDataForMapbox(mapResult, analysis);
+      combinedResult.data.mapData = this.formatMapDataForMapbox(
+        mapResult,
+        analysis,
+      );
     }
 
     // Always try to generate map data from raw data if we have location entities but no map data
-    if ((!combinedResult.data.mapData.features || combinedResult.data.mapData.features.length === 0) && 
-        analysis.extractedEntities.locations && analysis.extractedEntities.locations.length > 0) {
-      const rawData = phaseResults.get('data_collection') || phaseResults.get('direct_search') || phaseResults.get('data_aggregation');
+    if (
+      (!combinedResult.data.mapData.features ||
+        combinedResult.data.mapData.features.length === 0) &&
+      analysis.extractedEntities.locations &&
+      analysis.extractedEntities.locations.length > 0
+    ) {
+      const rawData =
+        phaseResults.get('data_collection') ||
+        phaseResults.get('direct_search') ||
+        phaseResults.get('data_aggregation');
       if (rawData) {
-        console.log('Generating fallback map data from raw data:', JSON.stringify(rawData, null, 2));
+        console.log(
+          'Generating fallback map data from raw data:',
+          JSON.stringify(rawData, null, 2),
+        );
         const generatedMapData = this.generateBasicMapData(rawData, analysis);
         if (generatedMapData.features && generatedMapData.features.length > 0) {
           combinedResult.data.mapData = generatedMapData;
@@ -357,8 +394,15 @@ export class AgentCoordinationService {
     }
 
     // Store raw data for debugging (optional)
-    if (phaseResults.has('data_collection') || phaseResults.has('direct_search') || phaseResults.has('data_aggregation')) {
-      combinedResult.rawData = phaseResults.get('data_collection') || phaseResults.get('direct_search') || phaseResults.get('data_aggregation');
+    if (
+      phaseResults.has('data_collection') ||
+      phaseResults.has('direct_search') ||
+      phaseResults.has('data_aggregation')
+    ) {
+      combinedResult.rawData =
+        phaseResults.get('data_collection') ||
+        phaseResults.get('direct_search') ||
+        phaseResults.get('data_aggregation');
     }
 
     return combinedResult;
@@ -396,7 +440,7 @@ export class AgentCoordinationService {
         type: 'FeatureCollection',
         features: mapResult.features || [],
         bounds: this.calculateBounds(mapResult.features || []),
-        center: this.calculateCenter(mapResult.features || [])
+        center: this.calculateCenter(mapResult.features || []),
       };
     }
 
@@ -407,7 +451,7 @@ export class AgentCoordinationService {
         type: 'FeatureCollection',
         features: geojson.features || [],
         bounds: this.calculateBounds(geojson.features || []),
-        center: this.calculateCenter(geojson.features || [])
+        center: this.calculateCenter(geojson.features || []),
       };
     }
 
@@ -416,7 +460,7 @@ export class AgentCoordinationService {
       type: 'FeatureCollection',
       features: [],
       bounds: null,
-      center: null
+      center: null,
     };
   }
 
@@ -425,22 +469,29 @@ export class AgentCoordinationService {
 
     // Extract location data from raw results - check multiple possible structures
     let dataToProcess = null;
-    
+
     if (rawData?.object) {
       dataToProcess = rawData.object;
     } else if (rawData?.toolResults) {
       // Check if rawData has toolResults array
-      const toolResult = rawData.toolResults.find((tr: any) => tr.result && typeof tr.result === 'object');
+      const toolResult = rawData.toolResults.find(
+        (tr: any) => tr.result && typeof tr.result === 'object',
+      );
       if (toolResult && toolResult.result) {
         try {
-          dataToProcess = typeof toolResult.result === 'string' ? JSON.parse(toolResult.result) : toolResult.result;
+          dataToProcess =
+            typeof toolResult.result === 'string'
+              ? JSON.parse(toolResult.result)
+              : toolResult.result;
         } catch (e) {
           dataToProcess = toolResult.result;
         }
       }
     } else if (rawData?.toolCalls) {
       // Check toolCalls for data
-      const toolCall = rawData.toolCalls.find((tc: any) => tc.args && tc.args.data);
+      const toolCall = rawData.toolCalls.find(
+        (tc: any) => tc.args && tc.args.data,
+      );
       if (toolCall?.args?.data) {
         dataToProcess = toolCall.args.data;
       }
@@ -449,28 +500,33 @@ export class AgentCoordinationService {
     if (dataToProcess) {
       // Handle TomTom search results
       if (dataToProcess.tomtomFuzzySearchTool?.results) {
-        dataToProcess.tomtomFuzzySearchTool.results.forEach((result: any, index: number) => {
-          if (result.position) {
-            features.push({
-              type: 'Feature',
-              geometry: {
-                type: 'Point',
-                coordinates: [result.position.lon, result.position.lat]
-              },
-              properties: {
-                id: result.id || `point-${index}`,
-                name: result.poi?.name || result.address?.freeformAddress || 'Unknown Location',
-                category: result.poi?.categories?.[0] || 'location',
-                address: result.address?.freeformAddress || '',
-                score: result.score || 0
-              }
-            });
-          }
-        });
+        dataToProcess.tomtomFuzzySearchTool.results.forEach(
+          (result: any, index: number) => {
+            if (result.position) {
+              features.push({
+                type: 'Feature',
+                geometry: {
+                  type: 'Point',
+                  coordinates: [result.position.lon, result.position.lat],
+                },
+                properties: {
+                  id: result.id || `point-${index}`,
+                  name:
+                    result.poi?.name ||
+                    result.address?.freeformAddress ||
+                    'Unknown Location',
+                  category: result.poi?.categories?.[0] || 'location',
+                  address: result.address?.freeformAddress || '',
+                  score: result.score || 0,
+                },
+              });
+            }
+          },
+        );
       }
 
       // Handle other tool results with location data
-      Object.keys(dataToProcess).forEach(toolKey => {
+      Object.keys(dataToProcess).forEach((toolKey) => {
         const toolResult = dataToProcess[toolKey];
         if (toolResult?.results && Array.isArray(toolResult.results)) {
           toolResult.results.forEach((item: any, index: number) => {
@@ -479,14 +535,14 @@ export class AgentCoordinationService {
                 type: 'Feature',
                 geometry: {
                   type: 'Point',
-                  coordinates: [item.lon, item.lat]
+                  coordinates: [item.lon, item.lat],
                 },
                 properties: {
                   id: item.id || `${toolKey}-${index}`,
                   name: item.name || item.title || 'Location',
                   category: item.category || toolKey.replace('Tool', ''),
-                  source: toolKey
-                }
+                  source: toolKey,
+                },
               });
             }
           });
@@ -498,17 +554,19 @@ export class AgentCoordinationService {
       type: 'FeatureCollection',
       features,
       bounds: this.calculateBounds(features),
-      center: this.calculateCenter(features)
+      center: this.calculateCenter(features),
     };
   }
 
   private calculateBounds(features: any[]): any {
     if (!features || features.length === 0) return null;
 
-    let minLat = Infinity, maxLat = -Infinity;
-    let minLon = Infinity, maxLon = -Infinity;
+    let minLat = Infinity,
+      maxLat = -Infinity;
+    let minLon = Infinity,
+      maxLon = -Infinity;
 
-    features.forEach(feature => {
+    features.forEach((feature) => {
       if (feature.geometry?.type === 'Point') {
         const [lon, lat] = feature.geometry.coordinates;
         minLat = Math.min(minLat, lat);
@@ -524,16 +582,18 @@ export class AgentCoordinationService {
       north: maxLat,
       south: minLat,
       east: maxLon,
-      west: minLon
+      west: minLon,
     };
   }
 
   private calculateCenter(features: any[]): any {
     if (!features || features.length === 0) return null;
 
-    let totalLat = 0, totalLon = 0, count = 0;
+    let totalLat = 0,
+      totalLon = 0,
+      count = 0;
 
-    features.forEach(feature => {
+    features.forEach((feature) => {
       if (feature.geometry?.type === 'Point') {
         const [lon, lat] = feature.geometry.coordinates;
         totalLat += lat;
@@ -546,7 +606,7 @@ export class AgentCoordinationService {
 
     return {
       lat: totalLat / count,
-      lon: totalLon / count
+      lon: totalLon / count,
     };
   }
 
@@ -569,7 +629,7 @@ export class AgentCoordinationService {
     // Simple estimation - could be enhanced with historical data
     const baseDuration = 2000; // 2 seconds base
     const phaseMultiplier = 1500; // 1.5 seconds per phase
-    
-    return baseDuration + (phases.length * phaseMultiplier);
+
+    return baseDuration + phases.length * phaseMultiplier;
   }
 }

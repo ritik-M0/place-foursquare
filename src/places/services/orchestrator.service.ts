@@ -36,14 +36,37 @@ export class OrchestratorService {
         },
       ]);
 
-      // Extract structured response
-      const response = result.object || {
-        summary: result.text || 'Query processed successfully',
-        rawData: validatedQuery.includeRawData ? result : undefined,
-        executionPlan: ['Query processed by orchestrator agent'],
-        confidence: 0.8,
-        sources: ['Orchestrator Agent'],
-      };
+      // Extract structured response - OrchestratorAgent returns structured JSON
+      let response;
+      
+      if (result.object) {
+        // Agent returned structured object
+        response = result.object;
+      } else if (result.text) {
+        // Try to parse agent's text response as JSON (agent is instructed to return JSON)
+        try {
+          const parsedResponse = JSON.parse(result.text);
+          response = parsedResponse;
+        } catch (e) {
+          // Fallback if agent didn't return valid JSON
+          response = {
+            summary: result.text,
+            rawData: validatedQuery.includeRawData ? result : undefined,
+            executionPlan: ['Query processed by orchestrator agent'],
+            confidence: 0.8,
+            sources: ['Orchestrator Agent'],
+          };
+        }
+      } else {
+        // Fallback response
+        response = {
+          summary: 'Query processed successfully',
+          rawData: validatedQuery.includeRawData ? result : undefined,
+          executionPlan: ['Query processed by orchestrator agent'],
+          confidence: 0.8,
+          sources: ['Orchestrator Agent'],
+        };
+      }
 
       this.logger.log(`Orchestrator query completed successfully`);
       return response as OrchestratorResponseDto;

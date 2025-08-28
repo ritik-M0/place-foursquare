@@ -15,6 +15,24 @@ export const OrchestratorResponseSchema = z.object({
   executionPlan: z.array(z.string()).describe('Steps taken to fulfill the query'),
   confidence: z.number().min(0).max(1).describe('Confidence score for the response'),
   sources: z.array(z.string()).describe('Data sources used'),
+  // Support for structured agent response format
+  data: z.object({
+    summary: z.object({
+      queryType: z.string().optional(),
+      extractedEntities: z.any().optional(),
+      analysis: z.object({
+        text: z.string(),
+        confidence: z.number(),
+      }).optional(),
+    }).optional(),
+    mapData: z.object({
+      type: z.literal('FeatureCollection'),
+      features: z.array(z.any()),
+      bounds: z.any().optional(),
+      center: z.any().optional(),
+    }).optional(),
+  }).optional(),
+  metadata: z.any().optional(),
 });
 
 export const OrchestratorStreamingResponseSchema = z.object({
@@ -91,6 +109,31 @@ export class OrchestratorResponseDto {
     example: ['TomTom Places API', 'BestTime.app', 'Google Places'],
   })
   sources: string[];
+
+  @ApiPropertyOptional({
+    description: 'Structured agent response data',
+  })
+  data?: {
+    summary?: {
+      queryType?: string;
+      extractedEntities?: any;
+      analysis?: {
+        text: string;
+        confidence: number;
+      };
+    };
+    mapData?: {
+      type: 'FeatureCollection';
+      features: any[];
+      bounds?: any;
+      center?: any;
+    };
+  };
+
+  @ApiPropertyOptional({
+    description: 'Response metadata',
+  })
+  metadata?: any;
 }
 
 export class OrchestratorStreamingResponseDto {

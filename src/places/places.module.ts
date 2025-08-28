@@ -1,8 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PlacesController } from './places.controller';
 import { PlacesService } from './places.service';
-import { OrchestratorController } from './controllers/orchestrator.controller';
-import { MapDataController } from './controllers/map-data.controller';
+// Removed unused controllers - only unified chat endpoint needed
 import { OrchestratorService } from './services/orchestrator.service';
 import { MapDataService } from './services/map-data.service';
 import { QueryRouterService } from './services/query-router.service';
@@ -13,8 +12,6 @@ import { IntelligentOrchestratorService } from './services/intelligent-orchestra
 @Module({
   controllers: [
     PlacesController,
-    OrchestratorController,
-    MapDataController,
   ],
   providers: [
     PlacesService,

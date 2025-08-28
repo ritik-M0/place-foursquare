@@ -1,6 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { QueryRouterService, QueryAnalysis, QueryType } from './query-router.service';
-import { AgentCoordinationService, ExecutionResult } from './agent-coordination.service';
+import {
+  QueryRouterService,
+  QueryAnalysis,
+  QueryType,
+} from './query-router.service';
+import {
+  AgentCoordinationService,
+  ExecutionResult,
+} from './agent-coordination.service';
 import { ToolProxyService } from './tool-proxy.service';
 
 export interface IntelligentQueryRequest {
@@ -44,30 +51,37 @@ export class IntelligentOrchestratorService {
     private readonly toolProxy: ToolProxyService,
   ) {}
 
-  async processIntelligentQuery(request: IntelligentQueryRequest): Promise<IntelligentQueryResponse> {
+  async processIntelligentQuery(
+    request: IntelligentQueryRequest,
+  ): Promise<IntelligentQueryResponse> {
     const startTime = Date.now();
-    
+
     this.logger.log(`Processing intelligent query: "${request.query}"`);
 
     try {
       // 1. Analyze and route the query
       const analysis = this.queryRouter.analyzeQuery(request.query);
-      
+
       // 2. Apply user preferences and context
       this.applyUserContext(analysis, request.context);
-      
+
       // 3. Optimize execution strategy based on preferences
       await this.optimizeExecution(analysis, request.preferences);
-      
+
       // 4. Execute coordinated multi-agent workflow
-      const executionResult = await this.agentCoordination.executeCoordinatedQuery(
-        request.query,
-        analysis,
-        request.sessionId
-      );
+      const executionResult =
+        await this.agentCoordination.executeCoordinatedQuery(
+          request.query,
+          analysis,
+          request.sessionId,
+        );
 
       // 5. Generate recommendations
-      const recommendations = await this.generateRecommendations(request, analysis, executionResult);
+      const recommendations = await this.generateRecommendations(
+        request,
+        analysis,
+        executionResult,
+      );
 
       // 6. Compile optimization metrics
       const optimizations = {
@@ -84,33 +98,39 @@ export class IntelligentOrchestratorService {
         recommendations,
       };
     } catch (error) {
-      this.logger.error(`Intelligent query processing failed: ${error.message}`);
+      this.logger.error(
+        `Intelligent query processing failed: ${error.message}`,
+      );
       throw error;
     }
   }
 
   async processStreamingQuery(
     request: IntelligentQueryRequest,
-    onProgress: (update: Partial<IntelligentQueryResponse>) => void
+    onProgress: (update: Partial<IntelligentQueryResponse>) => void,
   ): Promise<IntelligentQueryResponse> {
     const analysis = this.queryRouter.analyzeQuery(request.query);
-    
+
     // Send initial analysis
     onProgress({ analysis });
 
     // Apply optimizations
     await this.optimizeExecution(analysis, request.preferences);
-    
+
     // Execute with progress updates
     const executionResult = await this.executeWithProgress(
       request.query,
       analysis,
       request.sessionId,
-      onProgress
+      onProgress,
     );
 
-    const recommendations = await this.generateRecommendations(request, analysis, executionResult);
-    
+    const recommendations = await this.generateRecommendations(
+      request,
+      analysis,
+      executionResult,
+    );
+
     const optimizations = {
       cacheHits: this.getCacheHitCount(),
       parallelExecutions: this.getParallelExecutionCount(executionResult),
@@ -127,23 +147,31 @@ export class IntelligentOrchestratorService {
 
     // Send final update
     onProgress(finalResponse);
-    
+
     return finalResponse;
   }
 
-  private applyUserContext(analysis: QueryAnalysis, context?: IntelligentQueryRequest['context']): void {
+  private applyUserContext(
+    analysis: QueryAnalysis,
+    context?: IntelligentQueryRequest['context'],
+  ): void {
     if (!context) return;
 
     // Enhance analysis with user location
     if (context.userLocation && !analysis.extractedEntities.locations?.length) {
-      analysis.extractedEntities.locations = [`${context.userLocation.lat},${context.userLocation.lon}`];
+      analysis.extractedEntities.locations = [
+        `${context.userLocation.lat},${context.userLocation.lon}`,
+      ];
     }
 
     // Adjust confidence based on domain focus
     if (context.domainFocus) {
       switch (context.domainFocus) {
         case 'places':
-          if (analysis.type.includes('SEARCH') || analysis.type.includes('COMPREHENSIVE')) {
+          if (
+            analysis.type.includes('SEARCH') ||
+            analysis.type.includes('COMPREHENSIVE')
+          ) {
             analysis.confidence = Math.min(analysis.confidence + 0.1, 1.0);
           }
           break;
@@ -158,12 +186,15 @@ export class IntelligentOrchestratorService {
 
   private async optimizeExecution(
     analysis: QueryAnalysis,
-    preferences?: IntelligentQueryRequest['preferences']
+    preferences?: IntelligentQueryRequest['preferences'],
   ): Promise<void> {
     if (!preferences) return;
 
     // Pre-warm cache for common tools based on extracted entities
-    if (preferences.cacheStrategy === 'aggressive' && analysis.extractedEntities.locations) {
+    if (
+      preferences.cacheStrategy === 'aggressive' &&
+      analysis.extractedEntities.locations
+    ) {
       await this.preWarmCache(analysis.extractedEntities);
     }
 
@@ -173,7 +204,9 @@ export class IntelligentOrchestratorService {
     }
   }
 
-  private async preWarmCache(entities: QueryAnalysis['extractedEntities']): Promise<void> {
+  private async preWarmCache(
+    entities: QueryAnalysis['extractedEntities'],
+  ): Promise<void> {
     const preWarmTasks: Promise<any>[] = [];
 
     // Pre-warm location-based tools
@@ -184,7 +217,9 @@ export class IntelligentOrchestratorService {
           if (!isNaN(lat) && !isNaN(lon)) {
             preWarmTasks.push(
               this.toolProxy.getWeather({ lat, lon }).catch(() => {}),
-              this.toolProxy.searchEvents({ lat, lon, radius: 1000 }).catch(() => {})
+              this.toolProxy
+                .searchEvents({ lat, lon, radius: 1000 })
+                .catch(() => {}),
             );
           }
         }
@@ -203,17 +238,21 @@ export class IntelligentOrchestratorService {
     query: string,
     analysis: QueryAnalysis,
     sessionId?: string,
-    onProgress?: (update: Partial<IntelligentQueryResponse>) => void
+    onProgress?: (update: Partial<IntelligentQueryResponse>) => void,
   ): Promise<ExecutionResult> {
     // This would integrate with the agent coordination service
     // to provide real-time progress updates
-    return this.agentCoordination.executeCoordinatedQuery(query, analysis, sessionId);
+    return this.agentCoordination.executeCoordinatedQuery(
+      query,
+      analysis,
+      sessionId,
+    );
   }
 
   private async generateRecommendations(
     request: IntelligentQueryRequest,
     analysis: QueryAnalysis,
-    result: ExecutionResult
+    result: ExecutionResult,
   ): Promise<IntelligentQueryResponse['recommendations']> {
     const relatedQueries: string[] = [];
     const suggestedActions: string[] = [];
@@ -222,14 +261,14 @@ export class IntelligentOrchestratorService {
     if (analysis.extractedEntities.locations) {
       relatedQueries.push(
         `What are the popular events in ${analysis.extractedEntities.locations[0]}?`,
-        `Show me restaurants near ${analysis.extractedEntities.locations[0]} on a map`
+        `Show me restaurants near ${analysis.extractedEntities.locations[0]} on a map`,
       );
     }
 
     if (analysis.extractedEntities.categories) {
       relatedQueries.push(
         `Find ${analysis.extractedEntities.categories[0]} with good foot traffic`,
-        `Compare ${analysis.extractedEntities.categories[0]} ratings across different areas`
+        `Compare ${analysis.extractedEntities.categories[0]} ratings across different areas`,
       );
     }
 
@@ -238,7 +277,7 @@ export class IntelligentOrchestratorService {
       if (analysis.requiresMapping && !result.finalOutput.mapData) {
         suggestedActions.push('Generate map visualization of these results');
       }
-      
+
       if (!analysis.requiresSummary && result.finalOutput.rawData) {
         suggestedActions.push('Get a summary of these findings');
       }
@@ -257,20 +296,23 @@ export class IntelligentOrchestratorService {
 
   private getParallelExecutionCount(result: ExecutionResult): number {
     // Count parallel phases from execution result
-    return Array.from(result.phaseResults.keys()).filter(phase => 
-      phase.includes('parallel') || phase.includes('map_generation') || phase.includes('summarization')
+    return Array.from(result.phaseResults.keys()).filter(
+      (phase) =>
+        phase.includes('parallel') ||
+        phase.includes('map_generation') ||
+        phase.includes('summarization'),
     ).length;
   }
 
   // Utility methods for direct tool access
   async getToolResult(toolName: string, params: any): Promise<any> {
     const methodMap: { [key: string]: keyof ToolProxyService } = {
-      'searchPoiTool': 'searchPoi',
-      'tomtomFuzzySearchTool': 'fuzzySearch',
-      'getPlaceByIdTool': 'getPlaceById',
-      'getWeatherTool': 'getWeather',
-      'searchEventsTool': 'searchEvents',
-      'getFootTrafficTool': 'getFootTraffic',
+      searchPoiTool: 'searchPoi',
+      tomtomFuzzySearchTool: 'fuzzySearch',
+      getPlaceByIdTool: 'getPlaceById',
+      getWeatherTool: 'getWeather',
+      searchEventsTool: 'searchEvents',
+      getFootTrafficTool: 'getFootTraffic',
     };
 
     const method = methodMap[toolName];
