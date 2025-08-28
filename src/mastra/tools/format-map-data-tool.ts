@@ -174,9 +174,69 @@ export const formatMapDataTool = createTool({
     }
 
 
+    // Calculate bounds and center for Mapbox
+    const bounds = calculateBounds(features);
+    const center = calculateCenter(features);
+
     return {
-      type: 'FeatureCollection' as const, // Use 'as const' to infer literal type
+      type: 'FeatureCollection' as const,
       features: features,
+      bounds: bounds,
+      center: center,
+      metadata: {
+        totalFeatures: features.length,
+        sources: [...new Set(features.map(f => f.properties?.source).filter(Boolean))],
+        generatedAt: new Date().toISOString()
+      }
     };
   },
 });
+
+// Helper functions for bounds and center calculation
+function calculateBounds(features: any[]): any {
+  if (!features || features.length === 0) return null;
+
+  let minLat = Infinity, maxLat = -Infinity;
+  let minLon = Infinity, maxLon = -Infinity;
+
+  features.forEach(feature => {
+    if (feature.geometry?.type === 'Point') {
+      const [lon, lat] = feature.geometry.coordinates;
+      minLat = Math.min(minLat, lat);
+      maxLat = Math.max(maxLat, lat);
+      minLon = Math.min(minLon, lon);
+      maxLon = Math.max(maxLon, lon);
+    }
+  });
+
+  if (minLat === Infinity) return null;
+
+  return {
+    north: maxLat,
+    south: minLat,
+    east: maxLon,
+    west: minLon
+  };
+}
+
+function calculateCenter(features: any[]): any {
+  if (!features || features.length === 0) return null;
+
+  let totalLat = 0, totalLon = 0, count = 0;
+
+  features.forEach(feature => {
+    if (feature.geometry?.type === 'Point') {
+      const [lon, lat] = feature.geometry.coordinates;
+      totalLat += lat;
+      totalLon += lon;
+      count++;
+    }
+  });
+
+  if (count === 0) return null;
+
+  return {
+    lat: totalLat / count,
+    lon: totalLon / count
+  };
+}

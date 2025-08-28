@@ -106,16 +106,42 @@ export class QueryRouterService {
   }
 
   private extractLocations(query: string): string[] {
-    // Simple regex-based extraction - could be enhanced with NER
-    const locationPattern = /\b(?:in|near|at|around)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/g;
-    const matches = [];
-    let match;
+    const matches: string[] = [];
     
-    while ((match = locationPattern.exec(query)) !== null) {
-      matches.push(match[1]);
-    }
+    // Enhanced location patterns
+    const patterns = [
+      // Preposition + location: "in Austin", "near London", "at New York"
+      /\b(?:in|near|at|around)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/g,
+      // Direct city/country mentions: "Austin", "Texas", "London"
+      /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+(?:Texas|California|New York|Florida|Illinois|Ohio|Georgia|North Carolina|Michigan|New Jersey|Virginia|Washington|Arizona|Massachusetts|Tennessee|Indiana|Missouri|Maryland|Wisconsin|Colorado|Minnesota|South Carolina|Alabama|Louisiana|Kentucky|Oregon|Oklahoma|Connecticut|Utah|Iowa|Nevada|Arkansas|Mississippi|Kansas|New Mexico|Nebraska|West Virginia|Idaho|Hawaii|New Hampshire|Maine|Montana|Rhode Island|Delaware|South Dakota|North Dakota|Alaska|Vermont|Wyoming|DC)))/g,
+      // Coordinates pattern: "30.264979, -97.746598"
+      /(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/g,
+      // Address-like patterns: "123 Main St"
+      /\d+\s+[A-Z][a-z]+(?:\s+(?:St|Street|Ave|Avenue|Rd|Road|Blvd|Boulevard|Dr|Drive|Ln|Lane|Way|Ct|Court|Pl|Place))/g
+    ];
+
+    patterns.forEach(pattern => {
+      let match;
+      while ((match = pattern.exec(query)) !== null) {
+        if (match[1]) {
+          matches.push(match[1].trim());
+        } else if (match[0]) {
+          matches.push(match[0].trim());
+        }
+      }
+    });
+
+    // Common city names that might not be capitalized
+    const commonCities = ['austin', 'houston', 'dallas', 'san antonio', 'fort worth', 'el paso', 'arlington', 'corpus christi', 'plano', 'lubbock', 'laredo', 'garland', 'irving', 'amarillo', 'grand prairie', 'brownsville', 'mckinney', 'frisco', 'pasadena', 'mesquite'];
+    const lowerQuery = query.toLowerCase();
     
-    return matches;
+    commonCities.forEach(city => {
+      if (lowerQuery.includes(city)) {
+        matches.push(city.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '));
+      }
+    });
+    
+    return [...new Set(matches)]; // Remove duplicates
   }
 
   private extractCategories(query: string): string[] {
