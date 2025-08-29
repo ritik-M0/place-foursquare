@@ -110,9 +110,13 @@ export class QueryRouterService {
     
     // Enhanced location patterns
     const patterns = [
-      // Preposition + location: "in Austin", "near London", "at New York"
-      /\b(?:in|near|at|around)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/g,
-      // Direct city/country mentions: "Austin", "Texas", "London"
+      // Landmarks and parks: "Millennium Park", "Central Park", "Golden Gate Bridge"
+      /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+(?:Park|Bridge|Plaza|Square|Center|Mall|Tower|Building|Stadium|Arena|Museum|Library|University|College|Airport|Station))/gi,
+      // Preposition + location: "in Austin", "near London", "at New York", "around Chicago"
+      /\b(?:in|near|at|around|by)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/g,
+      // City, State pattern: "Chicago, Illinois", "Austin, Texas"
+      /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*),\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/g,
+      // Direct city/state mentions with state names
       /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+(?:Texas|California|New York|Florida|Illinois|Ohio|Georgia|North Carolina|Michigan|New Jersey|Virginia|Washington|Arizona|Massachusetts|Tennessee|Indiana|Missouri|Maryland|Wisconsin|Colorado|Minnesota|South Carolina|Alabama|Louisiana|Kentucky|Oregon|Oklahoma|Connecticut|Utah|Iowa|Nevada|Arkansas|Mississippi|Kansas|New Mexico|Nebraska|West Virginia|Idaho|Hawaii|New Hampshire|Maine|Montana|Rhode Island|Delaware|South Dakota|North Dakota|Alaska|Vermont|Wyoming|DC)))/g,
       // Coordinates pattern: "30.264979, -97.746598"
       /(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/g,
@@ -123,7 +127,10 @@ export class QueryRouterService {
     patterns.forEach(pattern => {
       let match;
       while ((match = pattern.exec(query)) !== null) {
-        if (match[1]) {
+        if (match[1] && match[2]) {
+          // City, State pattern
+          matches.push(`${match[1].trim()}, ${match[2].trim()}`);
+        } else if (match[1]) {
           matches.push(match[1].trim());
         } else if (match[0]) {
           matches.push(match[0].trim());
@@ -131,11 +138,34 @@ export class QueryRouterService {
       }
     });
 
-    // Common city names that might not be capitalized
-    const commonCities = ['austin', 'houston', 'dallas', 'san antonio', 'fort worth', 'el paso', 'arlington', 'corpus christi', 'plano', 'lubbock', 'laredo', 'garland', 'irving', 'amarillo', 'grand prairie', 'brownsville', 'mckinney', 'frisco', 'pasadena', 'mesquite'];
+    // Major US cities (expanded list)
+    const majorCities = [
+      'new york', 'los angeles', 'chicago', 'houston', 'phoenix', 'philadelphia', 
+      'san antonio', 'san diego', 'dallas', 'san jose', 'austin', 'jacksonville',
+      'fort worth', 'columbus', 'charlotte', 'san francisco', 'indianapolis', 
+      'seattle', 'denver', 'washington', 'boston', 'el paso', 'detroit', 'nashville',
+      'portland', 'memphis', 'oklahoma city', 'las vegas', 'louisville', 'baltimore',
+      'milwaukee', 'albuquerque', 'tucson', 'fresno', 'mesa', 'sacramento', 'atlanta',
+      'kansas city', 'colorado springs', 'miami', 'raleigh', 'omaha', 'long beach',
+      'virginia beach', 'oakland', 'minneapolis', 'tulsa', 'arlington', 'tampa',
+      'new orleans', 'wichita', 'cleveland', 'bakersfield', 'aurora', 'anaheim',
+      'honolulu', 'santa ana', 'corpus christi', 'riverside', 'lexington', 'stockton',
+      'toledo', 'st. paul', 'newark', 'greensboro', 'plano', 'henderson', 'lincoln',
+      'buffalo', 'jersey city', 'chula vista', 'fort wayne', 'orlando', 'st. petersburg',
+      'chandler', 'laredo', 'norfolk', 'durham', 'madison', 'lubbock', 'irvine',
+      'winston-salem', 'glendale', 'garland', 'hialeah', 'reno', 'chesapeake',
+      'gilbert', 'baton rouge', 'irving', 'scottsdale', 'north las vegas', 'fremont',
+      'boise', 'richmond', 'san bernardino', 'birmingham', 'spokane', 'rochester',
+      'des moines', 'modesto', 'fayetteville', 'tacoma', 'oxnard', 'fontana',
+      'columbus', 'montgomery', 'moreno valley', 'shreveport', 'aurora', 'yonkers',
+      'akron', 'huntington beach', 'little rock', 'augusta', 'amarillo', 'glendale',
+      'mobile', 'grand rapids', 'salt lake city', 'tallahassee', 'huntsville',
+      'grand prairie', 'knoxville', 'worcester', 'newport news', 'brownsville'
+    ];
+    
     const lowerQuery = query.toLowerCase();
     
-    commonCities.forEach(city => {
+    majorCities.forEach(city => {
       if (lowerQuery.includes(city)) {
         matches.push(city.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '));
       }
@@ -171,7 +201,12 @@ export class QueryRouterService {
 
   private requiresMapping(query: string): boolean {
     const mapIndicators = ['map', 'show', 'plot', 'visualize', 'geojson', 'coordinates'];
-    return mapIndicators.some(indicator => query.includes(indicator));
+    const locationBased = this.extractLocations(query).length > 0;
+    const businessAnalysis = ['area', 'around', 'near', 'location', 'suitability', 'competition', 'analyze'].some(keyword => 
+      query.toLowerCase().includes(keyword)
+    );
+    
+    return mapIndicators.some(indicator => query.includes(indicator)) || locationBased || businessAnalysis;
   }
 
   private requiresSummary(query: string): boolean {

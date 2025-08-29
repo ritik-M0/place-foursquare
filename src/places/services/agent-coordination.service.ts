@@ -249,6 +249,34 @@ export class AgentCoordinationService {
     originalQuery: string,
     context: any,
   ): string {
+    // For summarization phases, we need to structure the data properly for the summarizeTool
+    if (phase.name === 'analysis_summary' || phase.name === 'summarization') {
+      // Extract the data from previous phases for the summarize tool
+      const dataForSummarization: any = {};
+      
+      // Get data from data collection, aggregation, or search phases
+      if (context.data_aggregation) {
+        dataForSummarization.data_aggregation = context.data_aggregation;
+      }
+      if (context.data_collection) {
+        dataForSummarization.data_collection = context.data_collection;
+      }
+      if (context.direct_search) {
+        dataForSummarization.direct_search = context.direct_search;
+      }
+      if (context.planning) {
+        dataForSummarization.planning = context.planning;
+      }
+
+      // Return a structured prompt that will work with the summarizeTool
+      return `Use the summarizeTool with the following parameters:
+Query: "${originalQuery}"
+Data: ${JSON.stringify(dataForSummarization)}
+
+Please summarize the findings from the data collection phase in a clear, human-readable format.`;
+    }
+
+    // For other phases, use the original logic
     let prompt = `Original query: "${originalQuery}"\n\n`;
 
     if (Object.keys(context).length > 0) {
@@ -269,9 +297,6 @@ export class AgentCoordinationService {
       case 'map_generation':
         prompt += 'Generate GeoJSON map data from the collected information.';
         break;
-      case 'summarization':
-        prompt += 'Create a comprehensive summary of the findings.';
-        break;
       case 'geospatial_data':
         prompt += 'Focus on geospatial data collection and GeoJSON formatting.';
         break;
@@ -280,9 +305,6 @@ export class AgentCoordinationService {
         break;
       case 'data_aggregation':
         prompt += 'Aggregate and analyze the data for statistical insights.';
-        break;
-      case 'analysis_summary':
-        prompt += 'Summarize the analytical findings in a clear format.';
         break;
     }
 
