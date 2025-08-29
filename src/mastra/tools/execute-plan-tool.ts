@@ -31,7 +31,6 @@ export const executePlanTool = createTool({
 
       // PREVENT INFINITE LOOP: Skip if trying to call executePlanTool
       if (toolId === 'execute-plan' || toolId === 'executePlanTool') {
-        console.log(`Skipping recursive call to ${toolId} to prevent infinite loop`);
         results[toolId] = { error: 'Recursive call prevented' };
         continue;
       }
@@ -90,7 +89,6 @@ export const executePlanTool = createTool({
             toolInstance = getAggregatedMetricTool;
             break;
           default:
-            console.log(`Unknown tool: ${toolId}`);
             break;
         }
 
@@ -99,16 +97,13 @@ export const executePlanTool = createTool({
           const toolResult = await (toolInstance as any).execute({ context: toolArgs });
           results[toolId] = toolResult;
         } else {
-          console.log(`Tool '${toolId}' not found or not executable`);
           results[toolId] = {};
         }
       } catch (error: any) {
-        console.error(`Error executing tool ${toolId}:`, error);
         results[toolId] = { error: error.message || 'Unknown error during tool execution' };
       }
     }
     
-    console.log('ExecutePlanTool results:', JSON.stringify(results, null, 2));
     return results;
   },
 });

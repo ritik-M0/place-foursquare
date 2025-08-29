@@ -25,7 +25,6 @@ export const formatMapDataTool = createTool({
   outputSchema: GeoJsonFeatureCollectionSchema.describe('A GeoJSON FeatureCollection object containing all identified geospatial features.'),
   execute: async ({ context }) => {
     const rawData = context.rawData;
-    console.log('FormatMapDataTool received rawData:', JSON.stringify(rawData, null, 2));
     const features: z.infer<typeof GeoJsonFeatureSchema>[] = [];
 
     // Helper to add a feature

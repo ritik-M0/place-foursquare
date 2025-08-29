@@ -341,7 +341,6 @@ export class AgentCoordinationService {
     // Extract and format map data for Mapbox
     if (phaseResults.has('map_generation')) {
       const mapResult = phaseResults.get('map_generation');
-      console.log('Map generation result:', JSON.stringify(mapResult, null, 2));
 
       // Check if the map result is already in the correct GeoJSON format
       if (mapResult && mapResult.type === 'FeatureCollection') {
@@ -354,7 +353,6 @@ export class AgentCoordinationService {
             combinedResult.data.mapData = parsedMapData;
           }
         } catch (e) {
-          console.log('Failed to parse map data text as JSON:', e);
         }
       } else {
         combinedResult.data.mapData = this.formatMapDataForMapbox(
@@ -382,10 +380,6 @@ export class AgentCoordinationService {
         phaseResults.get('direct_search') ||
         phaseResults.get('data_aggregation');
       if (rawData) {
-        console.log(
-          'Generating fallback map data from raw data:',
-          JSON.stringify(rawData, null, 2),
-        );
         const generatedMapData = this.generateBasicMapData(rawData, analysis);
         if (generatedMapData.features && generatedMapData.features.length > 0) {
           combinedResult.data.mapData = generatedMapData;
