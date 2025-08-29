@@ -87,36 +87,31 @@ export class PlacesController {
   // Examples endpoint removed - unified chat handles all queries
 
   /**
-   * POST /api/places/chat/unified - Intelligent Unified Chat Endpoint
+   * POST /api/places/chat/unified - Ultra-Simple Chat Endpoint
    * 
-   * This is the most advanced endpoint that intelligently analyzes user queries
-   * and automatically determines the best response format:
+   * The simplest possible chat interface - just send a message and get a response.
+   * The orchestrator agent intelligently decides what to return:
+   * - Text responses for conversational queries
+   * - Map data (GeoJSON) for location-based queries  
+   * - Combined responses with both text and maps when relevant
+   * - Analysis data for statistical queries
    * 
-   * Response Types:
-   * - 'text': Regular conversational responses
-   * - 'geojson': Map data for location-based queries
-   * - 'analysis': Statistical/analytical data
+   * The agent handles all intelligence internally:
+   * 1. Query analysis and intent detection
+   * 2. Tool selection and execution
+   * 3. Response formatting (text, maps, or both)
+   * 4. Error handling and fallbacks
    * 
-   * Intelligence Flow:
-   * 1. Analyze user query for intent (map, analysis, or general)
-   * 2. Route to appropriate service:
-   *    - MapDataService for location/map queries → GeoJSON
-   *    - OrchestratorService for analysis queries → structured data
-   *    - Default to text responses for general queries
-   * 3. Return response with metadata about processing
+   * Perfect for a frontend chatbot that can display both text and maps.
    * 
-   * This endpoint replaces the need for multiple specialized endpoints
-   * by providing intelligent routing based on query content.
-   * 
-   * @param unifiedChatDto - Contains message, sessionId, and response preference
-   * @returns UnifiedChatResponseDto with intelligent response type and metadata
+   * @param unifiedChatDto - Contains message and optional sessionId/context
+   * @returns UnifiedChatResponseDto with the agent's direct response
    */
   @Post('chat/unified')
   @ApiOperation({
-    summary:
-      'Unified Chat Endpoint - Intelligently Routes to Appropriate Services',
+    summary: 'Ultra-Simple Chat Endpoint - Direct Agent Communication',
     description:
-      'Single endpoint that analyzes user queries and automatically returns text, GeoJSON, or analysis data based on content. This is the ultimate chatbot endpoint that handles all query types intelligently.',
+      'Send a message, get a response. The orchestrator agent intelligently handles everything - query analysis, tool selection, and response formatting. Perfect for chatbots that need to display text and maps.',
   })
   @ApiBody({ type: UnifiedChatDto })
   @ApiResponse({

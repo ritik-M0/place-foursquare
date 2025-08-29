@@ -1,21 +1,6 @@
-import { IsString, IsOptional, IsEnum, IsObject } from 'class-validator';
+import { IsString, IsOptional, IsObject } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { z } from 'zod';
-
-export enum ResponsePreference {
-  AUTO = 'auto',
-  TEXT = 'text',
-  GEOJSON = 'geojson',
-  STREAMING = 'streaming',
-  ANALYSIS = 'analysis',
-}
-
-export enum ResponseType {
-  TEXT = 'text',
-  GEOJSON = 'geojson',
-  ANALYSIS = 'analysis',
-  STREAMING = 'streaming',
-}
 
 export class UnifiedChatDto {
   @ApiProperty({
@@ -34,16 +19,6 @@ export class UnifiedChatDto {
   sessionId?: string;
 
   @ApiPropertyOptional({
-    description: 'Response format preference',
-    enum: ResponsePreference,
-    default: ResponsePreference.AUTO,
-    example: ResponsePreference.AUTO,
-  })
-  @IsOptional()
-  @IsEnum(ResponsePreference)
-  responsePreference?: ResponsePreference = ResponsePreference.AUTO;
-
-  @ApiPropertyOptional({
     description: 'Additional context for the query',
     example: { userLocation: { lat: 40.7589, lon: -73.9851 } },
   })
@@ -54,34 +29,27 @@ export class UnifiedChatDto {
 
 export class UnifiedChatResponseDto {
   @ApiProperty({
-    description: 'Type of response returned',
-    enum: ResponseType,
-    example: ResponseType.GEOJSON,
+    description: 'The orchestrator agent response - can be text, structured data, or both',
+    example: {
+      type: 'analysis',
+      data: {
+        summary: { text: 'Found 5 coffee shops in SoHo' },
+        mapData: { type: 'FeatureCollection', features: [] }
+      }
+    },
   })
-  type: ResponseType;
+  response: any;
 
   @ApiProperty({
-    description: 'The response data - format depends on type',
-    example: { type: 'FeatureCollection', features: [] },
-  })
-  data: any;
-
-  @ApiProperty({
-    description: 'Execution metadata',
+    description: 'Simple execution metadata',
     example: {
       executionTime: 2340,
-      agentsUsed: ['orchestratorAgent', 'mapDataAgent'],
-      toolsUsed: ['tomtomFuzzySearchTool', 'formatMapDataTool'],
-      confidence: 0.95,
+      agent: 'orchestratorAgent'
     },
   })
   metadata: {
     executionTime: number;
-    agentsUsed: string[];
-    toolsUsed: string[];
-    confidence: number;
-    intent?: string;
-    detectedEntities?: string[];
+    agent: string;
   };
 
   @ApiProperty({
@@ -99,28 +67,19 @@ export class UnifiedChatResponseDto {
 
 // Zod schemas for validation
 
-// Unified Chat Input Validation, Used in processUnifiedChat service
+// Simplified Chat Input Validation
 export const UnifiedChatSchema = z.object({
   message: z.string().min(1, 'Message cannot be empty'),
   sessionId: z.string().optional(),
-  responsePreference: z
-    .nativeEnum(ResponsePreference)
-    .optional()
-    .default(ResponsePreference.AUTO),
   context: z.record(z.any()).optional(),
 });
 
-// Unified Chat Output Validation
+// Simplified Chat Output Validation
 export const UnifiedChatResponseSchema = z.object({
-  type: z.nativeEnum(ResponseType),
-  data: z.any(),
+  response: z.any(), // Whatever the orchestrator agent returns
   metadata: z.object({
     executionTime: z.number(),
-    agentsUsed: z.array(z.string()),
-    toolsUsed: z.array(z.string()),
-    confidence: z.number(),
-    intent: z.string().optional(),
-    detectedEntities: z.array(z.string()).optional(),
+    agent: z.string(),
   }),
   success: z.boolean(),
   timestamp: z.string(),
